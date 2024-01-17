@@ -1,10 +1,11 @@
 /**
     Matrix Multiplication
-    matrices.c
+    matrices.c (improved Version)
+    "Using 2D array instead of a singular Array."
     Matrix data structure in C.
 
     @author Samarth Pyati
-    @version 1.0 16/1/24
+    @version 1.1 17/1/24
 */
 
 #include <stdio.h>
