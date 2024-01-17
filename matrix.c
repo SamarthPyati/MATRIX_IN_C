@@ -23,6 +23,7 @@
         perror(msg);        \
         exit(EXIT_FAILURE); \
     } while (0)
+
 #define HANDLE_ERROR_EN(en, msg) \
     do                           \
     {                            \
@@ -30,6 +31,7 @@
         perror(msg);             \
         exit(EXIT_FAILURE);      \
     } while (0)
+
 #define HANDLE_ERROR_MSG(msg)                       \
     do                                              \
     {                                               \
@@ -44,14 +46,31 @@ typedef struct
     int cols;
 } Matrix;
 
+typedef struct
+{
+    double *data;
+    int rows;
+    int cols;
+} Matrix_f;
+
 void getMatrixOrder(Matrix *matrix)
 {
     printf("%d x %d\n", matrix->rows, matrix->cols);
 }
 
-int validateMatrix(Matrix matrix)
+unsigned int getTotalElements(Matrix *m)
 {
-    return 0;
+    return m->rows * m->cols;
+}
+
+int getMatrixElement(Matrix *m, unsigned int row, unsigned int col)
+{
+    return *(m->data + row * m->cols + col);
+}
+
+int isSquareMatrix(Matrix *matrix)
+{
+    return (matrix->rows == matrix->cols);
 }
 
 void clearMatrix(Matrix *matrix)
@@ -76,6 +95,27 @@ void viewMatrix(Matrix *matrix, int addSpace)
         {
             long int el = *(matrix->data + i * matrix->cols + j);
             addSpace ? printf(" %ld ", el) : printf("%ld", el);
+
+            if (j < matrix->cols - 1)
+                printf(","); // comma
+        }
+        printf("]");
+        if (i < matrix->rows - 1)
+            printf("\n"); // newline
+    }
+    printf("]\n\n");
+}
+
+void viewMatrix_f(Matrix_f *matrix, int addSpace)
+{
+    printf("[");
+    for (int i = 0; i < matrix->rows; i++)
+    {
+        printf("[");
+        for (int j = 0; j < matrix->cols; j++)
+        {
+            double el = *(matrix->data + i * matrix->cols + j);
+            addSpace ? printf(" %f ", el) : printf("%f", el);
 
             if (j < matrix->cols - 1)
                 printf(","); // comma
@@ -191,16 +231,16 @@ Matrix transpose(Matrix *m)
 }
 
 /* Gets the minor Matrix of a element in a matrix */
-Matrix minorMatrix(Matrix *matrix, int r, int c)
+Matrix minor(Matrix *matrix, int r, int c)
 {
     if (r < 0 || r >= matrix->rows && c < 0 || c >= matrix->cols)
     {
         HANDLE_ERROR_MSG("Given row or column are out of bounds of the dimensions of Matrix.");
     }
 
-    Matrix minor = {malloc(sizeof(long int) * (matrix->rows - 1) * (matrix->cols - 1)), matrix->rows - 1, matrix->cols - 1};
+    Matrix minor_ = {malloc(sizeof(long int) * (matrix->rows - 1) * (matrix->cols - 1)), matrix->rows - 1, matrix->cols - 1};
 
-    if (minor.data == NULL)
+    if (minor_.data == NULL)
     {
         HANDLE_ERROR_MSG("Memory Allocation Failed For Matrix");
     }
@@ -211,10 +251,10 @@ Matrix minorMatrix(Matrix *matrix, int r, int c)
     {
         if (i == r)
         {
-            continue; // skipping the row of minor element
+            continue; // skipping the row of minor_ element
         }
 
-        minorCols = 0; // Reset minor column for each row in the original matrix
+        minorCols = 0; // Reset minor_ column for each row in the original matrix
 
         for (int j = 0; j < matrix->cols; j++)
         {
@@ -224,12 +264,165 @@ Matrix minorMatrix(Matrix *matrix, int r, int c)
             }
 
             // copying the desired data
-            *(minor.data + minorRows * minor.cols + minorCols) = *(matrix->data + i * matrix->cols + j);
+            *(minor_.data + minorRows * minor_.cols + minorCols) = *(matrix->data + i * matrix->cols + j);
             minorCols++;
         }
         minorRows++;
     }
-    return minor;
+    return minor_;
+}
+
+long int determinant(Matrix *m)
+{
+    if (!isSquareMatrix(m))
+    {
+        HANDLE_ERROR_MSG("Determinant only defined for square matrices (ORDER: n x n)");
+    }
+
+    // Calculate determinant for Matrix of Order = 2
+    if (m->rows == 2)
+    {
+        return m->data[0] * m->data[3] - m->data[1] * m->data[2];
+    }
+
+    long int det = 0;
+
+    for (unsigned int i = 0; i < m->rows; ++i)
+    {
+        Matrix minorMatrix = minor(m, 0, i);
+        int sign = (i % 2 == 0) ? 1 : -1;
+        det += sign * m->data[i] * determinant(&minorMatrix);
+        free(minorMatrix.data);
+    }
+    return det;
+}
+
+Matrix minorMatrix(Matrix *m)
+{
+    if (!isSquareMatrix(m))
+    {
+        HANDLE_ERROR_MSG("Minor Operations valid on Square Matrices only");
+    }
+
+    Matrix result = {malloc(sizeof(long int) * m->rows * m->cols), m->rows, m->cols};
+
+    if (result.data == NULL)
+    {
+        HANDLE_ERROR_MSG("Memory Allocation Failed for Matrix.");
+    }
+
+    for (unsigned int i = 0; i < m->rows; i++)
+    {
+        for (unsigned int j = 0; j < m->cols; j++)
+        {
+            Matrix tempMinorMatrix = minor(m, i, j);
+            long int det = determinant(&tempMinorMatrix);
+            *(result.data + i * result.cols + j) = det;
+            free(tempMinorMatrix.data); // Free memory allocated for the temporary minor matrix
+        }
+    }
+    return result;
+}
+
+long int cofactor(Matrix *m, unsigned int r, unsigned int c)
+{
+    if (r < 0 || r >= m->rows && c < 0 || c >= m->cols)
+    {
+        HANDLE_ERROR_MSG("Given row or column are out of bounds of the dimensions of Matrix. ");
+    }
+
+    long int result;
+    Matrix part = minor(m, r, c);
+    result = pow(-1, (r + c + 2)) * determinant(&part); // + 2 is added as it is 0 based indexed
+    return result;
+}
+
+Matrix cofactorMatrix(Matrix *m)
+{
+    if (!isSquareMatrix(m))
+    {
+        HANDLE_ERROR_MSG("Cofactors operations valid on Square Matrices only");
+    }
+
+    Matrix cofactor_matrix = {(long int *)malloc(sizeof(long int) * m->rows * m->cols), m->rows, m->cols};
+
+    if (cofactor_matrix.data == NULL)
+    {
+        HANDLE_ERROR_MSG("Memory Allocation Failed for Cofactor Matrix");
+    }
+
+    for (unsigned int i = 0; i < m->rows; ++i)
+    {
+        for (unsigned int j = 0; j < m->cols; ++j)
+        {
+            long int result = cofactor(m, i, j);
+            *(cofactor_matrix.data + i * m->cols + j) = result;
+        }
+    }
+
+    return cofactor_matrix;
+}
+
+Matrix adjoint(Matrix *m)
+{
+    if (!isSquareMatrix(m))
+    {
+        HANDLE_ERROR_MSG("Adjoint operations valid on Square Matrices only");
+    }
+
+    Matrix adjoint = {(long int *)malloc(sizeof(long int) * m->rows * m->cols), m->rows, m->cols};
+
+    if (adjoint.data == NULL)
+    {
+        HANDLE_ERROR_MSG("Memory Allocation Failed for Adjoint Matrix");
+    }
+
+    for (unsigned int i = 0; i < m->rows; i++)
+    {
+        for (unsigned int j = 0; j < m->cols; j++)
+        {
+            Matrix minorMatrix = minor(m, i, j);
+            int sign = ((i + j) % 2 == 0) ? 1 : -1;
+            int det = determinant(&minorMatrix);
+            *(adjoint.data + j * adjoint.cols + i) = sign * det;
+            free(minorMatrix.data); // Free memory allocated for the temporary minor matrix
+        }
+    }
+
+    return adjoint;
+}
+
+Matrix_f inverse(Matrix *m)
+{
+    if (!isSquareMatrix(m))
+    {
+        HANDLE_ERROR_MSG("Inverse operation valid on Square Matrices only");
+    }
+
+    long int det = determinant(m);
+
+    if (det == 0)
+    {
+        HANDLE_ERROR_MSG("Inverse does not exist for a singular matrix (determinant is zero)");
+    }
+
+    Matrix adj = adjoint(m);
+    Matrix_f inverse_matrix = {(double *)malloc(sizeof(double) * m->rows * m->cols), m->rows, m->cols};
+
+    if (inverse_matrix.data == NULL)
+    {
+        HANDLE_ERROR_MSG("Memory Allocation Failed for Inverse Matrix");
+    }
+
+    for (unsigned int i = 0; i < m->rows; i++)
+    {
+        for (unsigned int j = 0; j < m->cols; j++)
+        {
+            *(inverse_matrix.data + i * inverse_matrix.cols + j) = *(adj.data + i * adj.cols + j) / det;
+        }
+    }
+
+    return inverse_matrix;
 }
 
 int main(void)
@@ -239,9 +432,17 @@ int main(void)
     long int m_[9];
 
     Matrix m = {m_, 3, 3};
-    randomizeMatrix(&m, 100, 10);
-    Matrix a11 = minorMatrix(&m, 0, 0);
+    randomizeMatrix(&m, 10, 0);
     viewMatrix(&m, 1);
-    viewMatrix(&a11, 1);
+
+    Matrix cof = cofactorMatrix(&m);
+    viewMatrix(&cof, 1);
+
+    Matrix adj = adjoint(&m);
+    viewMatrix(&adj, 1);
+
+    Matrix_f inv = inverse(&m);
+    viewMatrix_f(&inv, 1);
+
     return 0;
 }
