@@ -42,17 +42,10 @@
 
 typedef struct
 {
-    long int *data;
-    int rows;
-    int cols;
-} Matrix;
-
-typedef struct
-{
     double *data;
     int rows;
     int cols;
-} Matrix_f;
+} Matrix;
 
 void getMatrixOrder(Matrix *matrix)
 {
@@ -94,29 +87,8 @@ void viewMatrix(Matrix *matrix, int addSpace)
         printf("[");
         for (int j = 0; j < matrix->cols; j++)
         {
-            long int el = *(matrix->data + i * matrix->cols + j);
-            addSpace ? printf(" %ld ", el) : printf("%ld", el);
-
-            if (j < matrix->cols - 1)
-                printf(","); // comma
-        }
-        printf("]");
-        if (i < matrix->rows - 1)
-            printf("\n"); // newline
-    }
-    printf("]\n\n");
-}
-
-void viewMatrix_f(Matrix_f *matrix, int addSpace)
-{
-    printf("[");
-    for (int i = 0; i < matrix->rows; i++)
-    {
-        printf("[");
-        for (int j = 0; j < matrix->cols; j++)
-        {
             double el = *(matrix->data + i * matrix->cols + j);
-            addSpace ? printf(" %g ", el) : printf("%g", el);
+            addSpace ? printf(" %f ", el) : printf("%f", el);
 
             if (j < matrix->cols - 1)
                 printf(","); // comma
@@ -144,7 +116,7 @@ Matrix addMatrix(Matrix *a, Matrix *b)
         HANDLE_ERROR_MSG("Matrices should have same order in Addition");
     }
 
-    Matrix result = {(long int *)malloc(sizeof(long int) * a->rows * a->cols), a->rows, a->cols};
+    Matrix result = {(double *)malloc(sizeof(double) * a->rows * a->cols), a->rows, a->cols};
 
     if (result.data == NULL)
     {
@@ -168,7 +140,7 @@ Matrix subtractMatrix(Matrix *a, Matrix *b)
         HANDLE_ERROR_MSG("Matrices should have same order for Subtraction");
     }
 
-    Matrix result = {(long int *)malloc(sizeof(long int) * a->rows * a->cols), a->rows, a->cols};
+    Matrix result = {(double *)malloc(sizeof(double) * a->rows * a->cols), a->rows, a->cols};
 
     if (result.data == NULL)
     {
@@ -195,7 +167,7 @@ Matrix multiplyMatrix(Matrix *a, Matrix *b)
 
     int rows = a->rows;
     int cols = a->cols;
-    Matrix result = {malloc(sizeof(long int) * a->rows * b->cols), a->rows, b->cols};
+    Matrix result = {malloc(sizeof(double) * a->rows * b->cols), a->rows, b->cols};
 
     for (unsigned int i = 0; i < rows; i++)
     {
@@ -218,7 +190,7 @@ Matrix transpose(Matrix *m)
     int rows = m->cols;
     int cols = m->rows;
     // A, A` | A[i][j] = A`[j][i]
-    Matrix result = {malloc(sizeof(long int) * rows * cols), rows, cols};
+    Matrix result = {malloc(sizeof(double) * rows * cols), rows, cols};
     // row & cols are swapped
 
     for (unsigned int i = 0; i < rows; ++i)
@@ -239,7 +211,7 @@ Matrix minor(Matrix *matrix, int r, int c)
         HANDLE_ERROR_MSG("Given row or column are out of bounds of the dimensions of Matrix.");
     }
 
-    Matrix minor_ = {malloc(sizeof(long int) * (matrix->rows - 1) * (matrix->cols - 1)), matrix->rows - 1, matrix->cols - 1};
+    Matrix minor_ = {malloc(sizeof(double) * (matrix->rows - 1) * (matrix->cols - 1)), matrix->rows - 1, matrix->cols - 1};
 
     if (minor_.data == NULL)
     {
@@ -273,7 +245,7 @@ Matrix minor(Matrix *matrix, int r, int c)
     return minor_;
 }
 
-long int determinant(Matrix *m)
+double determinant(Matrix *m)
 {
     if (!isSquareMatrix(m))
     {
@@ -286,7 +258,7 @@ long int determinant(Matrix *m)
         return m->data[0] * m->data[3] - m->data[1] * m->data[2];
     }
 
-    long int det = 0;
+    double det = 0;
 
     for (unsigned int i = 0; i < m->rows; ++i)
     {
@@ -305,7 +277,7 @@ Matrix minorMatrix(Matrix *m)
         HANDLE_ERROR_MSG("Minor Operations valid on Square Matrices only");
     }
 
-    Matrix result = {malloc(sizeof(long int) * m->rows * m->cols), m->rows, m->cols};
+    Matrix result = {malloc(sizeof(double) * m->rows * m->cols), m->rows, m->cols};
 
     if (result.data == NULL)
     {
@@ -317,7 +289,7 @@ Matrix minorMatrix(Matrix *m)
         for (unsigned int j = 0; j < m->cols; j++)
         {
             Matrix tempMinorMatrix = minor(m, i, j);
-            long int det = determinant(&tempMinorMatrix);
+            double det = determinant(&tempMinorMatrix);
             *(result.data + i * result.cols + j) = det;
             free(tempMinorMatrix.data); // Free memory allocated for the temporary minor matrix
         }
@@ -325,14 +297,14 @@ Matrix minorMatrix(Matrix *m)
     return result;
 }
 
-long int cofactor(Matrix *m, unsigned int r, unsigned int c)
+double cofactor(Matrix *m, unsigned int r, unsigned int c)
 {
     if (r < 0 || r >= m->rows && c < 0 || c >= m->cols)
     {
         HANDLE_ERROR_MSG("Given row or column are out of bounds of the dimensions of Matrix. ");
     }
 
-    long int result;
+    double result;
     Matrix part = minor(m, r, c);
     result = pow(-1, (r + c + 2)) * determinant(&part); // + 2 is added as it is 0 based indexed
     return result;
@@ -345,7 +317,7 @@ Matrix cofactorMatrix(Matrix *m)
         HANDLE_ERROR_MSG("Cofactors operations valid on Square Matrices only");
     }
 
-    Matrix cofactor_matrix = {(long int *)malloc(sizeof(long int) * m->rows * m->cols), m->rows, m->cols};
+    Matrix cofactor_matrix = {(double *)malloc(sizeof(double) * m->rows * m->cols), m->rows, m->cols};
 
     if (cofactor_matrix.data == NULL)
     {
@@ -356,7 +328,7 @@ Matrix cofactorMatrix(Matrix *m)
     {
         for (unsigned int j = 0; j < m->cols; ++j)
         {
-            long int result = cofactor(m, i, j);
+            double result = cofactor(m, i, j);
             *(cofactor_matrix.data + i * m->cols + j) = result;
         }
     }
@@ -371,7 +343,7 @@ Matrix adjoint(Matrix *m)
         HANDLE_ERROR_MSG("Adjoint operations valid on Square Matrices only");
     }
 
-    Matrix adjoint = {(long int *)malloc(sizeof(long int) * m->rows * m->cols), m->rows, m->cols};
+    Matrix adjoint = {(double *)malloc(sizeof(double) * m->rows * m->cols), m->rows, m->cols};
 
     if (adjoint.data == NULL)
     {
@@ -393,14 +365,14 @@ Matrix adjoint(Matrix *m)
     return adjoint;
 }
 
-Matrix_f inverse(Matrix *m)
+Matrix inverse(Matrix *m)
 {
     if (!isSquareMatrix(m))
     {
         HANDLE_ERROR_MSG("Inverse operation valid on Square Matrices only");
     }
 
-    long int det = determinant(m);
+    double det = determinant(m);
 
     if (det == 0)
     {
@@ -408,7 +380,7 @@ Matrix_f inverse(Matrix *m)
     }
 
     Matrix adj = adjoint(m);
-    Matrix_f inverse_matrix = {(double *)malloc(sizeof(double) * m->rows * m->cols), m->rows, m->cols};
+    Matrix inverse_matrix = {(double *)malloc(sizeof(double) * m->rows * m->cols), m->rows, m->cols};
 
     if (inverse_matrix.data == NULL)
     {
@@ -426,17 +398,36 @@ Matrix_f inverse(Matrix *m)
     return inverse_matrix;
 }
 
+void test(void);
+
 int main(void)
 {
-    srand(time(NULL));
+    srand(3);
+    test();
+    return 0;
+}
 
-    long int m_[9];
-
+void test(void)
+{
+    double m_[9];
     Matrix m = {m_, 3, 3};
     randomizeMatrix(&m, 100, 0);
     viewMatrix(&m, 1);
 
-    Matrix_f inv = inverse(&m);
-    viewMatrix_f(&m, 1);
-    return 0;
+    getMatrixOrder(&m);
+    printf("TOTAL: %d\n", getTotalElements(&m));
+    printf("A(1, 1): %d\n", getMatrixElement(&m, 1, 1));
+    printf("|A|: %f\n", determinant(&m));
+
+    Matrix trp = transpose(&m);
+    Matrix mMat = minorMatrix(&m);
+    Matrix cMat = cofactorMatrix(&m);
+    Matrix adj = adjoint(&m);
+    Matrix inv = inverse(&m);
+
+    viewMatrix(&trp, 1);
+    viewMatrix(&mMat, 1);
+    viewMatrix(&cMat, 1);
+    viewMatrix(&adj, 1);
+    viewMatrix(&inv, 1);
 }
