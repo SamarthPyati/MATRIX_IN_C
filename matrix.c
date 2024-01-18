@@ -115,7 +115,7 @@ void viewMatrix_f(Matrix_f *matrix, int addSpace)
         for (int j = 0; j < matrix->cols; j++)
         {
             double el = *(matrix->data + i * matrix->cols + j);
-            addSpace ? printf(" %f ", el) : printf("%f", el);
+            addSpace ? printf(" %g ", el) : printf("%g", el);
 
             if (j < matrix->cols - 1)
                 printf(","); // comma
@@ -385,7 +385,7 @@ Matrix adjoint(Matrix *m)
             int sign = ((i + j) % 2 == 0) ? 1 : -1;
             int det = determinant(&minorMatrix);
             *(adjoint.data + j * adjoint.cols + i) = sign * det;
-            free(minorMatrix.data); // Free memory allocated for the temporary minor matrix
+            free(minorMatrix.data);
         }
     }
 
@@ -418,7 +418,7 @@ Matrix_f inverse(Matrix *m)
     {
         for (unsigned int j = 0; j < m->cols; j++)
         {
-            *(inverse_matrix.data + i * inverse_matrix.cols + j) = *(adj.data + i * adj.cols + j) / det;
+            *(inverse_matrix.data + i * inverse_matrix.cols + j) = *(adj.data + i * adj.cols + j) / (double)det;
         }
     }
 
@@ -432,17 +432,10 @@ int main(void)
     long int m_[9];
 
     Matrix m = {m_, 3, 3};
-    randomizeMatrix(&m, 10, 0);
+    randomizeMatrix(&m, 100, 0);
     viewMatrix(&m, 1);
 
-    Matrix cof = cofactorMatrix(&m);
-    viewMatrix(&cof, 1);
-
-    Matrix adj = adjoint(&m);
-    viewMatrix(&adj, 1);
-
     Matrix_f inv = inverse(&m);
-    viewMatrix_f(&inv, 1);
-
+    viewMatrix_f(&m, 1);
     return 0;
 }
