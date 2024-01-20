@@ -40,6 +40,8 @@
         exit(EXIT_FAILURE);                         \
     } while (0)
 
+
+/* THE MAIN STRUCTURE OF MATRIX */
 typedef struct
 {
     double *data;
@@ -57,7 +59,18 @@ unsigned int getTotalElements(Matrix *m)
     return m->rows * m->cols;
 }
 
-int getMatrixElement(Matrix *m, unsigned int row, unsigned int col)
+/* Allocate certain amount of memory to matrices */
+Matrix mat_alloc(size_t rows, size_t cols)
+{
+    Matrix m;
+    m.rows = rows;
+    m.cols = cols;
+    m.data = malloc(sizeof(*m.data) * rows * cols);
+    if (m.data == NULL) HANDLE_ERROR_MSG("Memory Allocation Failed");
+    return m;
+}
+
+int getMatrixElement(Matrix *m, size_t row, size_t col)
 {
     return *(m->data + row * m->cols + col);
 }
@@ -116,12 +129,7 @@ Matrix addMatrix(Matrix *a, Matrix *b)
         HANDLE_ERROR_MSG("Matrices should have same order in Addition");
     }
 
-    Matrix result = {(double *)malloc(sizeof(double) * a->rows * a->cols), a->rows, a->cols};
-
-    if (result.data == NULL)
-    {
-        HANDLE_ERROR_MSG("Memory Allocation Failed");
-    }
+    Matrix result = mat_alloc(a->rows, a->cols);
 
     for (unsigned int i = 0; i < a->rows; i++)
     {
@@ -140,12 +148,7 @@ Matrix subtractMatrix(Matrix *a, Matrix *b)
         HANDLE_ERROR_MSG("Matrices should have same order for Subtraction");
     }
 
-    Matrix result = {(double *)malloc(sizeof(double) * a->rows * a->cols), a->rows, a->cols};
-
-    if (result.data == NULL)
-    {
-        HANDLE_ERROR_MSG("Memory Allocation Failed");
-    }
+    Matrix result = mat_alloc(a->rows, a->cols);
 
     for (unsigned int i = 0; i < a->rows; i++)
     {
@@ -167,7 +170,8 @@ Matrix multiplyMatrix(Matrix *a, Matrix *b)
 
     int rows = a->rows;
     int cols = a->cols;
-    Matrix result = {malloc(sizeof(double) * a->rows * b->cols), a->rows, b->cols};
+
+    Matrix result = mat_alloc(a->rows, b->cols);
 
     for (unsigned int i = 0; i < rows; i++)
     {
@@ -190,7 +194,7 @@ Matrix transpose(Matrix *m)
     int rows = m->cols;
     int cols = m->rows;
     // A, A` | A[i][j] = A`[j][i]
-    Matrix result = {malloc(sizeof(double) * rows * cols), rows, cols};
+    Matrix result = mat_alloc(rows, cols);
     // row & cols are swapped
 
     for (unsigned int i = 0; i < rows; ++i)
@@ -211,12 +215,7 @@ Matrix minor(Matrix *matrix, int r, int c)
         HANDLE_ERROR_MSG("Given row or column are out of bounds of the dimensions of Matrix.");
     }
 
-    Matrix minor_ = {malloc(sizeof(double) * (matrix->rows - 1) * (matrix->cols - 1)), matrix->rows - 1, matrix->cols - 1};
-
-    if (minor_.data == NULL)
-    {
-        HANDLE_ERROR_MSG("Memory Allocation Failed For Matrix");
-    }
+    Matrix minor_ = mat_alloc(matrix->rows - 1, matrix->cols - 1);
 
     int minorRows = 0, minorCols = 0;
 
@@ -277,12 +276,7 @@ Matrix minorMatrix(Matrix *m)
         HANDLE_ERROR_MSG("Minor Operations valid on Square Matrices only");
     }
 
-    Matrix result = {malloc(sizeof(double) * m->rows * m->cols), m->rows, m->cols};
-
-    if (result.data == NULL)
-    {
-        HANDLE_ERROR_MSG("Memory Allocation Failed for Matrix.");
-    }
+    Matrix result = mat_alloc(m->rows, m->cols);
 
     for (unsigned int i = 0; i < m->rows; i++)
     {
@@ -343,12 +337,7 @@ Matrix adjoint(Matrix *m)
         HANDLE_ERROR_MSG("Adjoint operations valid on Square Matrices only");
     }
 
-    Matrix adjoint = {(double *)malloc(sizeof(double) * m->rows * m->cols), m->rows, m->cols};
-
-    if (adjoint.data == NULL)
-    {
-        HANDLE_ERROR_MSG("Memory Allocation Failed for Adjoint Matrix");
-    }
+    Matrix adjoint = mat_alloc(m->rows, m->cols);
 
     for (unsigned int i = 0; i < m->rows; i++)
     {
@@ -380,12 +369,7 @@ Matrix inverse(Matrix *m)
     }
 
     Matrix adj = adjoint(m);
-    Matrix inverse_matrix = {(double *)malloc(sizeof(double) * m->rows * m->cols), m->rows, m->cols};
-
-    if (inverse_matrix.data == NULL)
-    {
-        HANDLE_ERROR_MSG("Memory Allocation Failed for Inverse Matrix");
-    }
+    Matrix inverse_matrix = mat_alloc(m->rows, m->cols);
 
     for (unsigned int i = 0; i < m->rows; i++)
     {
@@ -409,11 +393,20 @@ int main(void)
 
 void test(void)
 {
-    double m_[9];
-    Matrix m = {m_, 3, 3};
-    randomizeMatrix(&m, 100, 0);
+    /* FIRST WAY */
+    // double m_[9];
+    Matrix m = mat_alloc(3, 3);
+    randomizeMatrix(&m, 10, 1);
     viewMatrix(&m, 1);
 
+    /* IMPROVED WAY */
+    // Matrix k = mat_alloc(92, 3);
+    // randomizeMatrix(&k, 100, 10);
+    // viewMatrix(&k, 1);
+
+    // free(k.data);
+
+    /* GENERAL TESTING */
     getMatrixOrder(&m);
     printf("TOTAL: %d\n", getTotalElements(&m));
     printf("A(1, 1): %d\n", getMatrixElement(&m, 1, 1));
