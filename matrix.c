@@ -84,6 +84,15 @@ void clearMatrix(Matrix *matrix)
     }
 }
 
+Matrix_f m_alloc(size_t rows, size_t cols)
+{
+    Matrix_f m;
+    m.data = (double *)malloc(sizeof(*m.data) * m.rows * m.cols);
+    if (m.data == NULL) HANDLE_ERROR_MSG("Memory Allocation Failed.");
+    return m;
+}
+
+
 // row Major
 void viewMatrix(Matrix *matrix, int addSpace)
 {
@@ -437,5 +446,9 @@ int main(void)
 
     Matrix_f inv = inverse(&m);
     viewMatrix_f(&m, 1);
+
+    Matrix_f allocated = m_alloc(4, 4);
+    randomizeMatrix(&allocated, 10, 0);
+    viewMatrix_f(&allocated, 1);
     return 0;
 }
