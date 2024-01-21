@@ -127,12 +127,14 @@ void viewMatrix(Matrix *matrix, int addSpace, unsigned view)
     printf("]\n\n");
 }
 
-void randomizeMatrix(Matrix *matrix, const int MAX_RANGE, const int MIN_RANGE)
+void randomizeMatrix(Matrix *matrix, const int MAX, const int MIN)
 {
+    if (MIN > MAX)
+        HANDLE_ERROR_MSG("Incorrect assignment to Max and Min (!MIN > MAX)");
     const int SIZE = matrix->rows * matrix->cols;
     for (unsigned int i = 0; i < SIZE; ++i)
     {
-        matrix->data[i] = rand() % (MAX_RANGE - MIN_RANGE + 1) + MIN_RANGE;
+        matrix->data[i] = rand() % (MAX - MIN + 1) + MIN;
     }
 }
 
