@@ -40,7 +40,6 @@
         exit(EXIT_FAILURE);                         \
     } while (0)
 
-
 /* THE MAIN STRUCTURE OF MATRIX */
 typedef struct
 {
@@ -66,7 +65,8 @@ Matrix mat_alloc(size_t rows, size_t cols)
     m.rows = rows;
     m.cols = cols;
     m.data = malloc(sizeof(*m.data) * rows * cols);
-    if (m.data == NULL) HANDLE_ERROR_MSG("Memory Allocation Failed");
+    if (m.data == NULL)
+        HANDLE_ERROR_MSG("Memory Allocation Failed");
     return m;
 }
 
@@ -92,7 +92,7 @@ void clearMatrix(Matrix *matrix)
 }
 
 // row Major
-void viewMatrix(Matrix *matrix, int addSpace)
+void viewMatrix(Matrix *matrix, int addSpace, int viewAsINT)
 {
     printf("[");
     for (int i = 0; i < matrix->rows; i++)
@@ -101,7 +101,11 @@ void viewMatrix(Matrix *matrix, int addSpace)
         for (int j = 0; j < matrix->cols; j++)
         {
             double el = *(matrix->data + i * matrix->cols + j);
-            addSpace ? printf(" %f ", el) : printf("%f", el);
+
+            if (viewAsINT)
+                addSpace ? printf(" %d ", (int)el) : printf("%d", (int)el);
+            else
+                addSpace ? printf(" %f ", el) : printf("%f", el);
 
             if (j < matrix->cols - 1)
                 printf(","); // comma
@@ -386,7 +390,7 @@ void test(void);
 
 int main(void)
 {
-    srand(3);
+    srand(2);
     test();
     return 0;
 }
@@ -397,7 +401,7 @@ void test(void)
     // double m_[9];
     Matrix m = mat_alloc(3, 3);
     randomizeMatrix(&m, 10, 1);
-    viewMatrix(&m, 1);
+    viewMatrix(&m, 1, 1);
 
     /* IMPROVED WAY */
     // Matrix k = mat_alloc(92, 3);
@@ -407,10 +411,11 @@ void test(void)
     // free(k.data);
 
     /* GENERAL TESTING */
+
     getMatrixOrder(&m);
     printf("TOTAL: %d\n", getTotalElements(&m));
     printf("A(1, 1): %d\n", getMatrixElement(&m, 1, 1));
-    printf("|A|: %f\n", determinant(&m));
+    printf("|A|: %f\n\n", determinant(&m));
 
     Matrix trp = transpose(&m);
     Matrix mMat = minorMatrix(&m);
@@ -418,9 +423,9 @@ void test(void)
     Matrix adj = adjoint(&m);
     Matrix inv = inverse(&m);
 
-    viewMatrix(&trp, 1);
-    viewMatrix(&mMat, 1);
-    viewMatrix(&cMat, 1);
-    viewMatrix(&adj, 1);
-    viewMatrix(&inv, 1);
+    viewMatrix(&trp, 1, 1);
+    viewMatrix(&mMat, 1, 1);
+    viewMatrix(&cMat, 1, 1);
+    viewMatrix(&adj, 1, 1);
+    viewMatrix(&inv, 1, 0);
 }
