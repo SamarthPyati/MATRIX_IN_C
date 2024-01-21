@@ -44,16 +44,24 @@
 typedef struct
 {
     double *data;
-    int rows;
-    int cols;
+    size_t rows;
+    size_t cols;
 } Matrix;
+
+/* Fetch the element at a certain position (i, j) in the matrix*/
+#define MAT_AT(m, i, j) (m).data[(i) * (m).cols + (j)]
+#define MAT_ATP(m, i, j) (m)->data[(i) * (m)->cols + (j)] // P -> pointer refr
+
+/* explicit declarations of positions of elements in the matrices*/
+#define MAT_AT_EX(m, i, cols, j) (m).data[(i) * (cols) + (j)]
+#define MAT_AT_EX_P(m, i, cols, j) (m)->data[(i) * (cols) + (j)]
 
 void getMatrixOrder(Matrix *matrix)
 {
-    printf("%d x %d\n", matrix->rows, matrix->cols);
+    printf("%zu x %zu\n", matrix->rows, matrix->cols);
 }
 
-unsigned int getTotalElements(Matrix *m)
+size_t getTotalElements(Matrix *m)
 {
     return m->rows * m->cols;
 }
@@ -70,11 +78,6 @@ Matrix mat_alloc(size_t rows, size_t cols)
     return m;
 }
 
-int getMatrixElement(Matrix *m, size_t row, size_t col)
-{
-    return *(m->data + row * m->cols + col);
-}
-
 int isSquareMatrix(Matrix *matrix)
 {
     return (matrix->rows == matrix->cols);
@@ -86,7 +89,7 @@ void clearMatrix(Matrix *matrix)
     {
         for (int j = 0; j < matrix->cols; ++j)
         {
-            *(matrix->data + i * matrix->cols + j) = 0;
+            MAT_ATP(matrix, i, j) = 0;
         }
     }
 }
@@ -100,8 +103,9 @@ void viewMatrix(Matrix *matrix, int addSpace, int viewAsINT)
         printf("[");
         for (int j = 0; j < matrix->cols; j++)
         {
-            double el = *(matrix->data + i * matrix->cols + j);
+            double el = MAT_ATP(matrix, i, j);
 
+            // TODO: switch statement for different viewing types
             if (viewAsINT)
                 addSpace ? printf(" %d ", (int)el) : printf("%d", (int)el);
             else
@@ -139,7 +143,8 @@ Matrix addMatrix(Matrix *a, Matrix *b)
     {
         for (unsigned int j = 0; j < a->cols; j++)
         {
-            *(result.data + i * result.cols + j) = *(a->data + i * a->cols + j) + *(b->data + i * b->cols + j);
+            // *(result.data + i * result.cols + j) = *(a->data + i * a->cols + j) + *(b->data + i * b->cols + j);
+            MAT_AT(result, i, j) = MAT_ATP(a, i, j) + MAT_ATP(b, i, j);
         }
     }
     return result;
@@ -158,7 +163,8 @@ Matrix subtractMatrix(Matrix *a, Matrix *b)
     {
         for (unsigned int j = 0; j < a->cols; j++)
         {
-            *(result.data + i * result.cols + j) = *(a->data + i * a->cols + j) - *(b->data + i * b->cols + j);
+            // *(result.data + i * result.cols + j) = *(a->data + i * a->cols + j) - *(b->data + i * b->cols + j);
+            MAT_AT(result, i, j) = MAT_ATP(a, i, j) - MAT_ATP(b, i, j);
         }
     }
     return result;
@@ -185,9 +191,11 @@ Matrix multiplyMatrix(Matrix *a, Matrix *b)
             int sum = 0;
             for (unsigned int k = 0; k < cols; k++)
             {
-                sum += (*(a->data + i * cols + k)) * (*(b->data + k * cols + j));
+                // sum += (*(a->data + i * cols + k)) * (*(b->data + k * cols + j));
+                sum += MAT_AT_EX_P(a, i, cols, k) * MAT_AT_EX_P(b, k, cols, j);
             }
-            *(result.data + i * cols + j) = sum;
+            // *(result.data + i * cols + j) = sum;
+            MAT_AT_EX(result, i, cols, j) = sum;
         }
     }
     return result;
@@ -205,7 +213,8 @@ Matrix transpose(Matrix *m)
     {
         for (unsigned int j = 0; j < cols; ++j)
         {
-            *(result.data + i * cols + j) = *(m->data + j * rows + i);
+            // *(result.data + i * cols + j) = *(m->data + j * rows + i);
+            MAT_AT(result, i, j) = MAT_ATP(m, j, i);
         }
     }
     return result;
@@ -240,7 +249,8 @@ Matrix minor(Matrix *matrix, int r, int c)
             }
 
             // copying the desired data
-            *(minor_.data + minorRows * minor_.cols + minorCols) = *(matrix->data + i * matrix->cols + j);
+            // *(minor_.data + minorRows * minor_.cols + minorCols) = *(matrix->data + i * matrix->cols + j);
+            MAT_AT(minor_, minorRows, minorCols) = MAT_ATP(matrix, i, j);
             minorCols++;
         }
         minorRows++;
@@ -288,7 +298,8 @@ Matrix minorMatrix(Matrix *m)
         {
             Matrix tempMinorMatrix = minor(m, i, j);
             double det = determinant(&tempMinorMatrix);
-            *(result.data + i * result.cols + j) = det;
+            // *(result.data + i * result.cols + j) = det;
+            MAT_AT(result, i, j) = det;
             free(tempMinorMatrix.data); // Free memory allocated for the temporary minor matrix
         }
     }
@@ -327,7 +338,8 @@ Matrix cofactorMatrix(Matrix *m)
         for (unsigned int j = 0; j < m->cols; ++j)
         {
             double result = cofactor(m, i, j);
-            *(cofactor_matrix.data + i * m->cols + j) = result;
+            // *(cofactor_matrix.data + i * m->cols + j) = result;
+            MAT_AT_EX(cofactor_matrix, i, m->cols, j) = result;
         }
     }
 
@@ -350,7 +362,8 @@ Matrix adjoint(Matrix *m)
             Matrix minorMatrix = minor(m, i, j);
             int sign = ((i + j) % 2 == 0) ? 1 : -1;
             int det = determinant(&minorMatrix);
-            *(adjoint.data + j * adjoint.cols + i) = sign * det;
+            // *(adjoint.data + j * adjoint.cols + i) = sign * det;
+            MAT_AT(adjoint, j, i) = sign * det;
             free(minorMatrix.data);
         }
     }
@@ -379,18 +392,37 @@ Matrix inverse(Matrix *m)
     {
         for (unsigned int j = 0; j < m->cols; j++)
         {
-            *(inverse_matrix.data + i * inverse_matrix.cols + j) = *(adj.data + i * adj.cols + j) / (double)det;
+            // *(inverse_matrix.data + i * inverse_matrix.cols + j) = *(adj.data + i * adj.cols + j) / (double)det;
+            MAT_AT(inverse_matrix, i, j) = MAT_AT(adj, i, j) / det;
         }
     }
 
     return inverse_matrix;
 }
 
+Matrix identity(size_t rows, size_t cols)
+{
+    Matrix id = mat_alloc(rows, cols);
+    clearMatrix(&id);
+    for (size_t i = 0; i < rows; ++i)
+    {
+        for (size_t j = 0; j < cols; ++j)
+        {
+            if (i == j)
+            {
+                MAT_AT(id, i, j) = 1;
+            }
+        }
+    }
+    return id;
+}
+
 void test(void);
+void test_mat_at(void);
 
 int main(void)
 {
-    srand(2);
+    srand(4); // Set seed value for pseudoRandom Generator
     test();
     return 0;
 }
@@ -398,24 +430,15 @@ int main(void)
 void test(void)
 {
     /* FIRST WAY */
-    // double m_[9];
     Matrix m = mat_alloc(3, 3);
     randomizeMatrix(&m, 10, 1);
     viewMatrix(&m, 1, 1);
 
-    /* IMPROVED WAY */
-    // Matrix k = mat_alloc(92, 3);
-    // randomizeMatrix(&k, 100, 10);
-    // viewMatrix(&k, 1);
-
-    // free(k.data);
-
     /* GENERAL TESTING */
-
-    getMatrixOrder(&m);
-    printf("TOTAL: %d\n", getTotalElements(&m));
-    printf("A(1, 1): %d\n", getMatrixElement(&m, 1, 1));
-    printf("|A|: %f\n\n", determinant(&m));
+    // getMatrixOrder(&m);
+    // printf("TOTAL: %d\n", getTotalElements(&m));
+    // printf("A(1, 1): %d\n", (int)MAT_AT(m, 1, 1));
+    // printf("|A|: %f\n\n", determinant(&m));
 
     Matrix trp = transpose(&m);
     Matrix mMat = minorMatrix(&m);
@@ -423,9 +446,33 @@ void test(void)
     Matrix adj = adjoint(&m);
     Matrix inv = inverse(&m);
 
+    Matrix i = multiplyMatrix(&m, &inv);
+    Matrix idt = identity(3, 3);
     viewMatrix(&trp, 1, 1);
     viewMatrix(&mMat, 1, 1);
     viewMatrix(&cMat, 1, 1);
     viewMatrix(&adj, 1, 1);
     viewMatrix(&inv, 1, 0);
+    viewMatrix(&idt, 1, 1);
+    viewMatrix(&i, 1, 1);
+}
+
+void test_mat_at(void)
+{
+    Matrix a = mat_alloc(3, 3);
+    randomizeMatrix(&a, 1e1, 0);
+    viewMatrix(&a, 1, 1);
+
+    Matrix a_min = minorMatrix(&a);
+    viewMatrix(&a_min, 1, 1);
+    double a_ = determinant(&a_min);
+    printf("DET(M(a)[0, 0]) : %d\n", (int)a_);
+    // for (size_t i = 0; i < m.rows; ++i)
+    // {
+    //     for (size_t j = 0; j < m.cols; ++j)
+    //     {
+    //         printf("%d ", (int)MAT_ATP(&m, i, j));
+    //     }
+    //     printf("\n");
+    // }
 }
