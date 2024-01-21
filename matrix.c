@@ -95,7 +95,7 @@ void clearMatrix(Matrix *matrix)
 }
 
 // row Major
-void viewMatrix(Matrix *matrix, int addSpace, int viewAsINT)
+void viewMatrix(Matrix *matrix, int addSpace, unsigned view)
 {
     printf("[");
     for (int i = 0; i < matrix->rows; i++)
@@ -104,12 +104,18 @@ void viewMatrix(Matrix *matrix, int addSpace, int viewAsINT)
         for (int j = 0; j < matrix->cols; j++)
         {
             double el = MAT_ATP(matrix, i, j);
-
-            // TODO: switch statement for different viewing types
-            if (viewAsINT)
+            switch (view)
+            {
+            case 1:
                 addSpace ? printf(" %d ", (int)el) : printf("%d", (int)el);
-            else
+                break;
+            case 2:
+                addSpace ? printf(" %g ", el) : printf("%g", el);
+                break;
+            default:
                 addSpace ? printf(" %f ", el) : printf("%f", el);
+                break;
+            }
 
             if (j < matrix->cols - 1)
                 printf(","); // comma
@@ -467,6 +473,7 @@ void test_mat_at(void)
     viewMatrix(&a_min, 1, 1);
     double a_ = determinant(&a_min);
     printf("DET(M(a)[0, 0]) : %d\n", (int)a_);
+
     // for (size_t i = 0; i < m.rows; ++i)
     // {
     //     for (size_t j = 0; j < m.cols; ++j)
