@@ -78,9 +78,43 @@ Matrix mat_alloc(size_t rows, size_t cols)
     return m;
 }
 
+void mat_populate(Matrix *m, double *data_)
+{
+    m->data = data_;
+}
+
 int isSquareMatrix(Matrix *matrix)
 {
     return (matrix->rows == matrix->cols);
+}
+
+int isEqual(Matrix *a, Matrix *b)
+{
+    // dimensions
+    if (!(a->rows == b->rows && a->cols == b->cols))
+    {
+        return 0;
+    }
+
+    for (size_t i = 0; i < a->rows; ++i)
+    {
+        for (size_t j = 0; j < a->cols; ++j)
+        {
+            if (MAT_ATP(a, i, j) != MAT_ATP(b, i, j))
+                return 0;
+        }
+    }
+    return 1;
+}
+
+Matrix transpose(Matrix *m);
+int isSym(Matrix *m)
+{
+    Matrix mt = mat_alloc(m->rows, m->cols);
+    mt = transpose(m);
+    if (isEqual(m, &mt))
+        return 1;
+    return 0;
 }
 
 void clearMatrix(Matrix *matrix)
@@ -314,7 +348,7 @@ Matrix minorMatrix(Matrix *m)
     return result;
 }
 
-double cofactor(Matrix *m, unsigned int r, unsigned int c)
+double cofactor(Matrix *m, size_t r, size_t c)
 {
     if (r < 0 || r >= m->rows && c < 0 || c >= m->cols)
     {
@@ -408,6 +442,32 @@ Matrix inverse(Matrix *m)
     return inverse_matrix;
 }
 
+double trace(Matrix *m)
+{
+    if (!isSquareMatrix(m))
+    {
+        HANDLE_ERROR_MSG("Trace operations valid only on square Matrices.");
+    }
+
+    double res = 0;
+    for (size_t i = 0; i < m->rows; ++i)
+    {
+        for (size_t j = 0; j < m->cols; ++j)
+        {
+            if (i == j)
+                res += MAT_ATP(m, i, j);
+        }
+    }
+    return res;
+}
+
+Matrix null_mat(size_t rows, size_t cols)
+{
+    Matrix null = mat_alloc(rows, cols);
+    clearMatrix(&null);
+    return null;
+}
+
 Matrix identity(size_t rows, size_t cols)
 {
     Matrix id = mat_alloc(rows, cols);
@@ -430,7 +490,7 @@ void test_mat_at(void);
 
 int main(void)
 {
-    srand(4); // Set seed value for pseudoRandom Generator
+    srand(6); // Set seed value for pseudoRandom Generator
     test();
     return 0;
 }
@@ -438,9 +498,23 @@ int main(void)
 void test(void)
 {
     /* FIRST WAY */
-    Matrix m = mat_alloc(3, 3);
-    randomizeMatrix(&m, 10, 1);
-    viewMatrix(&m, 1, 1);
+    // Matrix m = mat_alloc(3, 3);
+    // double dat[9] = {
+    //     2, 3, 4,
+    //     3, 0, 1,
+    //     4, 1, 9};
+    // mat_populate(&m, dat);
+    // viewMatrix(&m, 1, 1);
+    // Matrix _m = transpose(&m);
+    // viewMatrix(&_m, 1, 1);
+    // printf("\nSYM?:%d\n", isSym(&m));
+
+    /* SYMMERTIC*/
+    // printf("tr(A): %d\n", (int)trace(&m));
+
+    /* NULL MATRIX */
+    // Matrix null = null_mat(3, 3);
+    // viewMatrix(&null, 1, 1);
 
     /* GENERAL TESTING */
     // getMatrixOrder(&m);
@@ -448,21 +522,21 @@ void test(void)
     // printf("A(1, 1): %d\n", (int)MAT_AT(m, 1, 1));
     // printf("|A|: %f\n\n", determinant(&m));
 
-    Matrix trp = transpose(&m);
-    Matrix mMat = minorMatrix(&m);
-    Matrix cMat = cofactorMatrix(&m);
-    Matrix adj = adjoint(&m);
-    Matrix inv = inverse(&m);
+    // Matrix trp = transpose(&m);
+    // Matrix mMat = minorMatrix(&m);
+    // Matrix cMat = cofactorMatrix(&m);
+    // Matrix adj = adjoint(&m);
+    // Matrix inv = inverse(&m);
 
-    Matrix i = multiplyMatrix(&m, &inv);
-    Matrix idt = identity(3, 3);
-    viewMatrix(&trp, 1, 1);
-    viewMatrix(&mMat, 1, 1);
-    viewMatrix(&cMat, 1, 1);
-    viewMatrix(&adj, 1, 1);
-    viewMatrix(&inv, 1, 0);
-    viewMatrix(&idt, 1, 1);
-    viewMatrix(&i, 1, 1);
+    // Matrix i = multiplyMatrix(&m, &inv);
+    // Matrix idt = identity(3, 3);
+    // viewMatrix(&trp, 1, 1);
+    // viewMatrix(&mMat, 1, 1);
+    // viewMatrix(&cMat, 1, 1);
+    // viewMatrix(&adj, 1, 1);
+    // viewMatrix(&inv, 1, 0);
+    // viewMatrix(&idt, 1, 1);
+    // viewMatrix(&i, 1, 1);
 }
 
 void test_mat_at(void)
