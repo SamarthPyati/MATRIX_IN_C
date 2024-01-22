@@ -485,13 +485,25 @@ Matrix identity(size_t rows, size_t cols)
     return id;
 }
 
+void multiplyScalar(Matrix *m, double k)
+{
+    for (size_t i = 0; i < m->rows; i++)
+    {
+        for (size_t j = 0; j < m->cols; j++)
+        {
+            MAT_ATP(m, i, j) *= k;
+        }
+    }
+}
+
 void test(void);
 void test_mat_at(void);
 
 int main(void)
 {
-    srand(6); // Set seed value for pseudoRandom Generator
-    test();
+    time_t t;
+    srand(t); // Set seed value for pseudoRandom Generator
+    test_mat_at();
     return 0;
 }
 
@@ -541,21 +553,13 @@ void test(void)
 
 void test_mat_at(void)
 {
-    Matrix a = mat_alloc(3, 3);
-    randomizeMatrix(&a, 1e1, 0);
-    viewMatrix(&a, 1, 1);
+    double data[] = {
+        1, 2, 3,
+        4, 4, 5,
+        1, 1, 1};
 
-    Matrix a_min = minorMatrix(&a);
-    viewMatrix(&a_min, 1, 1);
-    double a_ = determinant(&a_min);
-    printf("DET(M(a)[0, 0]) : %d\n", (int)a_);
-
-    // for (size_t i = 0; i < m.rows; ++i)
-    // {
-    //     for (size_t j = 0; j < m.cols; ++j)
-    //     {
-    //         printf("%d ", (int)MAT_ATP(&m, i, j));
-    //     }
-    //     printf("\n");
-    // }
+    Matrix A = {.data = data, .rows = 3, .cols = 3};
+    viewMatrix(&A, 1, 1);
+    multiplyScalar(&A, -1.9012);
+    viewMatrix(&A, 1, 0);
 }
