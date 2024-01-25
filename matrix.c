@@ -468,23 +468,6 @@ Matrix null_mat(size_t rows, size_t cols)
     return null;
 }
 
-Matrix identity(size_t rows, size_t cols)
-{
-    Matrix id = mat_alloc(rows, cols);
-    clearMatrix(&id);
-    for (size_t i = 0; i < rows; ++i)
-    {
-        for (size_t j = 0; j < cols; ++j)
-        {
-            if (i == j)
-            {
-                MAT_AT(id, i, j) = 1;
-            }
-        }
-    }
-    return id;
-}
-
 Matrix fill(size_t rows, size_t cols, double element)
 {
     Matrix m = mat_alloc(rows, cols);
@@ -496,6 +479,31 @@ Matrix fill(size_t rows, size_t cols, double element)
         }
     }
     return m;
+}
+
+Matrix diag(double *arr, size_t SIZE)
+{
+    // convert 1D arr to a diagonal matrix
+    Matrix m = mat_alloc(SIZE, SIZE);
+    for (size_t i = 0; i < m.rows; i++)
+    {
+        for (size_t j = 0; j < m.cols; j++)
+        {
+            if (i == j)
+                MAT_AT(m, i, j) = arr[i];
+        }
+    }
+    return m;
+}
+
+Matrix identity(size_t SIZE)
+{
+    // Square matrix with diagonal elements as 1
+    double arr[SIZE];
+    for (unsigned int i = 0; i < SIZE; i++)
+        arr[i] = 1;
+    Matrix id = diag(arr, SIZE);
+    return id;
 }
 
 void multiplyScalar(Matrix *m, double k)
@@ -576,6 +584,8 @@ void test_mat_at(void)
     // multiplyScalar(&A, -1.9012);
     // viewMatrix(&A, 1, 0);
 
-    Matrix m = fill(3, 4, 0.1);
-    viewMatrix(&m, 2);
+    double dat[] = {0, 1, 1, 0};
+    Matrix m = diag(dat, 4);
+    Matrix id = identity(7);
+    viewMatrix(&id, 2);
 }
