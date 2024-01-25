@@ -129,7 +129,7 @@ void clearMatrix(Matrix *matrix)
 }
 
 // row Major
-void viewMatrix(Matrix *matrix, int addSpace, unsigned view)
+void viewMatrix(Matrix *matrix, unsigned view)
 {
     printf("[");
     for (int i = 0; i < matrix->rows; i++)
@@ -141,13 +141,13 @@ void viewMatrix(Matrix *matrix, int addSpace, unsigned view)
             switch (view)
             {
             case 1:
-                addSpace ? printf(" %d ", (int)el) : printf("%d", (int)el);
+                printf(" %d ", (int)el);
                 break;
             case 2:
-                addSpace ? printf(" %g ", el) : printf("%g", el);
+                printf(" %g ", el);
                 break;
             default:
-                addSpace ? printf(" %f ", el) : printf("%f", el);
+                printf(" %f ", el);
                 break;
             }
 
@@ -181,9 +181,9 @@ Matrix addMatrix(Matrix *a, Matrix *b)
 
     Matrix result = mat_alloc(a->rows, a->cols);
 
-    for (unsigned int i = 0; i < a->rows; i++)
+    for (size_t i = 0; i < a->rows; i++)
     {
-        for (unsigned int j = 0; j < a->cols; j++)
+        for (size_t j = 0; j < a->cols; j++)
         {
             // *(result.data + i * result.cols + j) = *(a->data + i * a->cols + j) + *(b->data + i * b->cols + j);
             MAT_AT(result, i, j) = MAT_ATP(a, i, j) + MAT_ATP(b, i, j);
@@ -201,9 +201,9 @@ Matrix subtractMatrix(Matrix *a, Matrix *b)
 
     Matrix result = mat_alloc(a->rows, a->cols);
 
-    for (unsigned int i = 0; i < a->rows; i++)
+    for (size_t i = 0; i < a->rows; i++)
     {
-        for (unsigned int j = 0; j < a->cols; j++)
+        for (size_t j = 0; j < a->cols; j++)
         {
             // *(result.data + i * result.cols + j) = *(a->data + i * a->cols + j) - *(b->data + i * b->cols + j);
             MAT_AT(result, i, j) = MAT_ATP(a, i, j) - MAT_ATP(b, i, j);
@@ -225,13 +225,13 @@ Matrix multiplyMatrix(Matrix *a, Matrix *b)
 
     Matrix result = mat_alloc(a->rows, b->cols);
 
-    for (unsigned int i = 0; i < rows; i++)
+    for (size_t i = 0; i < rows; i++)
     {
-        for (unsigned int j = 0; j < cols; j++)
+        for (size_t j = 0; j < cols; j++)
         {
             // sum = a[i][k] + b[k][j]
             int sum = 0;
-            for (unsigned int k = 0; k < cols; k++)
+            for (size_t k = 0; k < cols; k++)
             {
                 // sum += (*(a->data + i * cols + k)) * (*(b->data + k * cols + j));
                 sum += MAT_AT_EX_P(a, i, cols, k) * MAT_AT_EX_P(b, k, cols, j);
@@ -251,9 +251,9 @@ Matrix transpose(Matrix *m)
     Matrix result = mat_alloc(rows, cols);
     // row & cols are swapped
 
-    for (unsigned int i = 0; i < rows; ++i)
+    for (size_t i = 0; i < rows; ++i)
     {
-        for (unsigned int j = 0; j < cols; ++j)
+        for (size_t j = 0; j < cols; ++j)
         {
             // *(result.data + i * cols + j) = *(m->data + j * rows + i);
             MAT_AT(result, i, j) = MAT_ATP(m, j, i);
@@ -315,7 +315,7 @@ double determinant(Matrix *m)
 
     double det = 0;
 
-    for (unsigned int i = 0; i < m->rows; ++i)
+    for (size_t i = 0; i < m->rows; ++i)
     {
         Matrix minorMatrix = minor(m, 0, i);
         int sign = (i % 2 == 0) ? 1 : -1;
@@ -334,9 +334,9 @@ Matrix minorMatrix(Matrix *m)
 
     Matrix result = mat_alloc(m->rows, m->cols);
 
-    for (unsigned int i = 0; i < m->rows; i++)
+    for (size_t i = 0; i < m->rows; i++)
     {
-        for (unsigned int j = 0; j < m->cols; j++)
+        for (size_t j = 0; j < m->cols; j++)
         {
             Matrix tempMinorMatrix = minor(m, i, j);
             double det = determinant(&tempMinorMatrix);
@@ -375,9 +375,9 @@ Matrix cofactorMatrix(Matrix *m)
         HANDLE_ERROR_MSG("Memory Allocation Failed for Cofactor Matrix");
     }
 
-    for (unsigned int i = 0; i < m->rows; ++i)
+    for (size_t i = 0; i < m->rows; ++i)
     {
-        for (unsigned int j = 0; j < m->cols; ++j)
+        for (size_t j = 0; j < m->cols; ++j)
         {
             double result = cofactor(m, i, j);
             // *(cofactor_matrix.data + i * m->cols + j) = result;
@@ -397,9 +397,9 @@ Matrix adjoint(Matrix *m)
 
     Matrix adjoint = mat_alloc(m->rows, m->cols);
 
-    for (unsigned int i = 0; i < m->rows; i++)
+    for (size_t i = 0; i < m->rows; i++)
     {
-        for (unsigned int j = 0; j < m->cols; j++)
+        for (size_t j = 0; j < m->cols; j++)
         {
             Matrix minorMatrix = minor(m, i, j);
             int sign = ((i + j) % 2 == 0) ? 1 : -1;
@@ -430,9 +430,9 @@ Matrix inverse(Matrix *m)
     Matrix adj = adjoint(m);
     Matrix inverse_matrix = mat_alloc(m->rows, m->cols);
 
-    for (unsigned int i = 0; i < m->rows; i++)
+    for (size_t i = 0; i < m->rows; i++)
     {
-        for (unsigned int j = 0; j < m->cols; j++)
+        for (size_t j = 0; j < m->cols; j++)
         {
             // *(inverse_matrix.data + i * inverse_matrix.cols + j) = *(adj.data + i * adj.cols + j) / (double)det;
             MAT_AT(inverse_matrix, i, j) = MAT_AT(adj, i, j) / det;
@@ -483,6 +483,19 @@ Matrix identity(size_t rows, size_t cols)
         }
     }
     return id;
+}
+
+Matrix fill(size_t rows, size_t cols, double element)
+{
+    Matrix m = mat_alloc(rows, cols);
+    for (size_t i = 0; i < rows; i++)
+    {
+        for (size_t j = 0; j < cols; j++)
+        {
+            MAT_AT(m, i, j) = element;
+        }
+    }
+    return m;
 }
 
 void multiplyScalar(Matrix *m, double k)
@@ -553,13 +566,16 @@ void test(void)
 
 void test_mat_at(void)
 {
-    double data[] = {
-        1, 2, 3,
-        4, 4, 5,
-        1, 1, 1};
+    // double data[] = {
+    //     1, 2, 3,
+    //     4, 4, 5,
+    //     1, 1, 1};
 
-    Matrix A = {.data = data, .rows = 3, .cols = 3};
-    viewMatrix(&A, 1, 1);
-    multiplyScalar(&A, -1.9012);
-    viewMatrix(&A, 1, 0);
+    // Matrix A = {.data = data, .rows = 3, .cols = 3};
+    // viewMatrix(&A, 1, 1);
+    // multiplyScalar(&A, -1.9012);
+    // viewMatrix(&A, 1, 0);
+
+    Matrix m = fill(3, 4, 0.1);
+    viewMatrix(&m, 2);
 }
