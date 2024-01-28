@@ -545,6 +545,19 @@ void mat_mul_k(Matrix m, double k)
     }
 }
 
+double sum(Matrix m)
+{
+    double sum = 0.0;
+    for (size_t i = 0; i < m.rows; i++)
+    {
+        for (size_t j = 0; j < m.cols; j++)
+        {
+            sum += MAT_AT(m, i, j);
+        }
+    }
+    return sum;
+}
+
 #endif // MATRIX_H
 
 // #ifdef MATRIX_IMPLEMENTATION
