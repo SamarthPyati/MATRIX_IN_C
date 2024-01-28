@@ -5,7 +5,7 @@
     Matrix data structure in C.
 
     @author Samarth Pyati
-    @version 1.1 17/1/24
+    @version 1.2 25/1/24
 */
 
 #ifndef MATRIX_H_
