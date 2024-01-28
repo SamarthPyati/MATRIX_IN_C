@@ -90,6 +90,3 @@ Macros (`HANDLE_ERROR`, `HANDLE_ERROR_EN`, and `HANDLE_ERROR_MSG`) efficiently h
 
 - Author: Samarth Pyati
 - Version: 1.2 (25/1/24)
-```
-
-This README provides a comprehensive overview of the matrix operations and usage instructions for the C program. Feel free to customize it further based on your preferences.
