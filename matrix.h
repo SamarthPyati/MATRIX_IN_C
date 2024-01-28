@@ -545,17 +545,107 @@ void mat_mul_k(Matrix m, double k)
     }
 }
 
-double sum(Matrix m)
+Matrix sum(Matrix m, unsigned int axis)
 {
-    double sum = 0.0;
-    for (size_t i = 0; i < m.rows; i++)
+    Matrix result;
+    switch (axis)
     {
+    case 0: // whole sum
+        result = mat_alloc(1, 1);
+        double sum = 0.0;
+        for (size_t i = 0; i < m.rows; i++)
+        {
+            for (size_t j = 0; j < m.cols; j++)
+            {
+                sum += MAT_AT(m, i, j);
+            }
+        }
+        MAT_AT(result, 0, 0) = sum;
+        break;
+    case 1: // Row-wise
+        result = mat_alloc(m.rows, 1);
+        for (size_t i = 0; i < m.rows; i++)
+        {
+            double sum = 0.0;
+            for (size_t j = 0; j < m.cols; j++)
+            {
+                sum += MAT_AT(m, i, j);
+            }
+            MAT_AT(result, i, 0) = sum;
+        }
+        break;
+    case 2: // Column-wise
+        result = mat_alloc(1, m.cols);
         for (size_t j = 0; j < m.cols; j++)
         {
-            sum += MAT_AT(m, i, j);
+            double sum = 0.0;
+            for (size_t i = 0; i < m.rows; i++)
+            {
+                sum += MAT_AT(m, i, j);
+            }
+            MAT_AT(result, 0, j) = sum;
         }
+        break;
+    default:
+        // Handle invalid axis value
+        HANDLE_ERROR_MSG("Invalid axis value. Use 0 to get whole sum 1 for row-wise and 2 for column-wise.");
+        break;
     }
-    return sum;
+    return result;
+}
+
+Matrix mean(Matrix m, unsigned int axis)
+{
+    Matrix result;
+
+    switch (axis)
+    {
+    case 0: // whole mean
+        result = mat_alloc(1, 1);
+        double sum = 0.0;
+        for (size_t i = 0; i < m.rows; i++)
+        {
+            for (size_t j = 0; j < m.cols; j++)
+            {
+                sum += MAT_AT(m, i, j);
+            }
+        }
+        double mean = sum / getTotalElements(m);
+        MAT_AT(result, 0, 0) = mean;
+        break;
+    case 1: // Row-wise
+        result = mat_alloc(m.rows, 1);
+        for (size_t i = 0; i < m.rows; i++)
+        {
+            double sum = 0.0;
+            for (size_t j = 0; j < m.cols; j++)
+            {
+                sum += MAT_AT(m, i, j);
+            }
+            double mean = sum / m.cols;
+            MAT_AT(result, i, 0) = mean;
+        }
+        break;
+    case 2: // Column-wise
+        result = mat_alloc(1, m.cols);
+        for (size_t j = 0; j < m.cols; j++)
+        {
+            double sum = 0.0;
+            for (size_t i = 0; i < m.rows; i++)
+            {
+                sum += MAT_AT(m, i, j);
+            }
+            double mean = sum / m.rows;
+            MAT_AT(result, 0, j) = mean;
+        }
+        break;
+    default:
+        // Handle invalid axis value
+        HANDLE_ERROR_MSG("Invalid axis value. Use 0 to get whole mean, 1 for row-wise mean, and 2 for column-wise mean.");
+        break;
+    }
+
+    return result;
 }
 
 #endif // MATRIX_H
