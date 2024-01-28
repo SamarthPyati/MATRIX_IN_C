@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <errno.h>
+#include <string.h>
 #include <time.h>
 
 #define True 1
@@ -60,14 +61,14 @@ typedef struct
 #define MAT_AT_EX(m, i, cols, j) (m).data[(i) * (cols) + (j)]
 #define MAT_AT_EX_P(m, i, cols, j) (m)->data[(i) * (cols) + (j)]
 
-void getMatrixOrder(Matrix *matrix)
+void getMatrixOrder(Matrix matrix)
 {
-    printf("%zu x %zu\n", matrix->rows, matrix->cols);
+    printf("%zu x %zu\n", matrix.rows, matrix.cols);
 }
 
-size_t getTotalElements(Matrix *m)
+size_t getTotalElements(Matrix m)
 {
-    return m->rows * m->cols;
+    return m.rows * m.cols;
 }
 
 /* Allocate certain amount of memory to matrices */
@@ -84,65 +85,63 @@ Matrix mat_alloc(size_t rows, size_t cols)
 
 void mat_populate(Matrix *m, double *data_)
 {
-    m->data = data_;
+    memcpy(m->data, data_, sizeof(double) * m->rows * m->cols);
 }
 
-int isSquareMatrix(Matrix *matrix)
+int isSquareMatrix(Matrix matrix)
 {
-    return (matrix->rows == matrix->cols);
+    return (matrix.rows == matrix.cols);
 }
 
-int isEqual(Matrix *a, Matrix *b)
+int isEqual(Matrix a, Matrix b)
 {
     // dimensions
-    if (!(a->rows == b->rows && a->cols == b->cols))
+    if (!(a.rows == b.rows && a.cols == b.cols))
     {
         return 0;
     }
 
-    for (size_t i = 0; i < a->rows; ++i)
+    for (size_t i = 0; i < a.rows; ++i)
     {
-        for (size_t j = 0; j < a->cols; ++j)
+        for (size_t j = 0; j < a.cols; ++j)
         {
-            if (MAT_ATP(a, i, j) != MAT_ATP(b, i, j))
+            if (MAT_AT(a, i, j) != MAT_AT(b, i, j))
                 return 0;
         }
     }
     return 1;
 }
 
-Matrix transpose(Matrix *m);
-int isSym(Matrix *m)
+Matrix transpose(Matrix m);
+int isSym(Matrix m)
 {
-    Matrix mt = mat_alloc(m->rows, m->cols);
-    mt = transpose(m);
-    if (isEqual(m, &mt))
+    if (isEqual(m, transpose(m)))
         return 1;
     return 0;
 }
 
-void clearMatrix(Matrix *matrix)
+void clear(Matrix matrix)
 {
-    for (int i = 0; i < matrix->rows; ++i)
+    for (int i = 0; i < matrix.rows; ++i)
     {
-        for (int j = 0; j < matrix->cols; ++j)
+        for (int j = 0; j < matrix.cols; ++j)
         {
-            MAT_ATP(matrix, i, j) = 0;
+            MAT_AT(matrix, i, j) = 0;
         }
     }
 }
 
 // row Major
-void viewMatrix(Matrix *matrix, unsigned view)
+void view(Matrix matrix, unsigned viewOpt)
 {
     printf("[");
-    for (int i = 0; i < matrix->rows; i++)
+    for (int i = 0; i < matrix.rows; i++)
     {
         printf("[");
-        for (int j = 0; j < matrix->cols; j++)
+        for (int j = 0; j < matrix.cols; j++)
         {
-            double el = MAT_ATP(matrix, i, j);
-            switch (view)
+            double el = MAT_AT(matrix, i, j);
+            switch (viewOpt)
             {
             case 1:
                 printf(" %d ", (int)el);
@@ -155,79 +154,79 @@ void viewMatrix(Matrix *matrix, unsigned view)
                 break;
             }
 
-            if (j < matrix->cols - 1)
+            if (j < matrix.cols - 1)
                 printf(","); // comma
         }
         printf("]");
-        if (i < matrix->rows - 1)
+        if (i < matrix.rows - 1)
             printf("\n"); // newline
     }
     printf("]\n\n");
 }
 
-void mat_rand(Matrix *matrix, const int MAX, const int MIN)
+void mat_rand(Matrix matrix, const int MAX, const int MIN)
 {
     if (MIN > MAX)
         HANDLE_ERROR_MSG("Incorrect assignment to Max and Min (!MIN > MAX)");
-    const int SIZE = matrix->rows * matrix->cols;
+    const int SIZE = matrix.rows * matrix.cols;
     for (unsigned int i = 0; i < SIZE; ++i)
     {
-        matrix->data[i] = rand() % (MAX - MIN + 1) + MIN;
+        matrix.data[i] = rand() % (MAX - MIN + 1) + MIN;
     }
 }
 
-Matrix mat_add(Matrix *a, Matrix *b)
+Matrix mat_add(Matrix a, Matrix b)
 {
-    if (!(a->rows == b->rows && a->cols == b->cols))
+    if (!(a.rows == b.rows && a.cols == b.cols))
     {
         HANDLE_ERROR_MSG("Matrices should have same order in Addition");
     }
 
-    Matrix result = mat_alloc(a->rows, a->cols);
+    Matrix result = mat_alloc(a.rows, a.cols);
 
-    for (size_t i = 0; i < a->rows; i++)
+    for (size_t i = 0; i < a.rows; i++)
     {
-        for (size_t j = 0; j < a->cols; j++)
+        for (size_t j = 0; j < a.cols; j++)
         {
-            // *(result.data + i * result.cols + j) = *(a->data + i * a->cols + j) + *(b->data + i * b->cols + j);
-            MAT_AT(result, i, j) = MAT_ATP(a, i, j) + MAT_ATP(b, i, j);
+            // *(result.data + i * result.cols + j) = *(a.data + i * a.cols + j) + *(b.data + i * b.cols + j);
+            MAT_AT(result, i, j) = MAT_AT(a, i, j) + MAT_AT(b, i, j);
         }
     }
     return result;
 }
 
-Matrix mat_sub(Matrix *a, Matrix *b)
+Matrix mat_sub(Matrix a, Matrix b)
 {
-    if (!(a->rows == b->rows && a->cols == b->cols))
+    if (!(a.rows == b.rows && a.cols == b.cols))
     {
         HANDLE_ERROR_MSG("Matrices should have same order for Subtraction");
     }
 
-    Matrix result = mat_alloc(a->rows, a->cols);
+    Matrix result = mat_alloc(a.rows, a.cols);
 
-    for (size_t i = 0; i < a->rows; i++)
+    for (size_t i = 0; i < a.rows; i++)
     {
-        for (size_t j = 0; j < a->cols; j++)
+        for (size_t j = 0; j < a.cols; j++)
         {
-            // *(result.data + i * result.cols + j) = *(a->data + i * a->cols + j) - *(b->data + i * b->cols + j);
-            MAT_AT(result, i, j) = MAT_ATP(a, i, j) - MAT_ATP(b, i, j);
+            // *(result.data + i * result.cols + j) = *(a.data + i * a.cols + j) - *(b.data + i * b.cols + j);
+            MAT_AT(result, i, j) = MAT_AT(a, i, j) - MAT_AT(b, i, j);
         }
     }
     return result;
 }
 
-Matrix mat_mul(Matrix *a, Matrix *b)
+Matrix mat_mul(Matrix a, Matrix b)
 {
-    // A = 2 x 3 || B = 3 x 2, ORDER = 2 x 2
-    if (a->cols != b->rows)
+    // A = 2 x 3 || B = 3 x 2, RESULT = 2 x 2
+    if (a.cols != b.rows)
     {
         HANDLE_ERROR_MSG("Inappropriate order for matrix multiplication");
     }
 
-    int rows = a->rows;
-    int cols = a->cols;
+    int rows = a.rows;
+    int cols = a.cols;
 
-    Matrix result = mat_alloc(a->rows, b->cols);
+    Matrix result = mat_alloc(a.rows, b.cols);
 
     for (size_t i = 0; i < rows; i++)
     {
@@ -237,8 +236,8 @@ Matrix mat_mul(Matrix *a, Matrix *b)
             int sum = 0;
             for (size_t k = 0; k < cols; k++)
             {
-                // sum += (*(a->data + i * cols + k)) * (*(b->data + k * cols + j));
-                sum += MAT_AT_EX_P(a, i, cols, k) * MAT_AT_EX_P(b, k, cols, j);
+                // sum += (*(a.data + i * cols + k)) * (*(b.data + k * cols + j));
+                sum += MAT_AT_EX(a, i, cols, k) * MAT_AT_EX(b, k, cols, j);
             }
             // *(result.data + i * cols + j) = sum;
             MAT_AT_EX(result, i, cols, j) = sum;
@@ -247,10 +246,10 @@ Matrix mat_mul(Matrix *a, Matrix *b)
     return result;
 }
 
-Matrix transpose(Matrix *m)
+Matrix transpose(Matrix m)
 {
-    int rows = m->cols;
-    int cols = m->rows;
+    int rows = m.cols;
+    int cols = m.rows;
     // A, A` | A[i][j] = A`[j][i]
     Matrix result = mat_alloc(rows, cols);
     // row & cols are swapped
@@ -259,26 +258,26 @@ Matrix transpose(Matrix *m)
     {
         for (size_t j = 0; j < cols; ++j)
         {
-            // *(result.data + i * cols + j) = *(m->data + j * rows + i);
-            MAT_AT(result, i, j) = MAT_ATP(m, j, i);
+            // *(result.data + i * cols + j) = *(m.data + j * rows + i);
+            MAT_AT(result, i, j) = MAT_AT(m, j, i);
         }
     }
     return result;
 }
 
 /* Gets the minor Matrix of a element in a matrix */
-Matrix minor(Matrix *matrix, int r, int c)
+Matrix minor(Matrix matrix, int r, int c)
 {
-    if (r < 0 || r >= matrix->rows && c < 0 || c >= matrix->cols)
+    if (r < 0 || r >= matrix.rows && c < 0 || c >= matrix.cols)
     {
         HANDLE_ERROR_MSG("Given row or column are out of bounds of the dimensions of Matrix.");
     }
 
-    Matrix minor_ = mat_alloc(matrix->rows - 1, matrix->cols - 1);
+    Matrix minor_ = mat_alloc(matrix.rows - 1, matrix.cols - 1);
 
     int minorRows = 0, minorCols = 0;
 
-    for (int i = 0; i < matrix->rows; i++)
+    for (int i = 0; i < matrix.rows; i++)
     {
         if (i == r)
         {
@@ -287,7 +286,7 @@ Matrix minor(Matrix *matrix, int r, int c)
 
         minorCols = 0; // Reset minor_ column for each row in the original matrix
 
-        for (int j = 0; j < matrix->cols; j++)
+        for (int j = 0; j < matrix.cols; j++)
         {
             if (j == c)
             {
@@ -295,8 +294,8 @@ Matrix minor(Matrix *matrix, int r, int c)
             }
 
             // copying the desired data
-            // *(minor_.data + minorRows * minor_.cols + minorCols) = *(matrix->data + i * matrix->cols + j);
-            MAT_AT(minor_, minorRows, minorCols) = MAT_ATP(matrix, i, j);
+            // *(minor_.data + minorRows * minor_.cols + minorCols) = *(matrix.data + i * matrix.cols + j);
+            MAT_AT(minor_, minorRows, minorCols) = MAT_AT(matrix, i, j);
             minorCols++;
         }
         minorRows++;
@@ -304,7 +303,7 @@ Matrix minor(Matrix *matrix, int r, int c)
     return minor_;
 }
 
-double det(Matrix *m)
+double det(Matrix m)
 {
     if (!isSquareMatrix(m))
     {
@@ -312,38 +311,53 @@ double det(Matrix *m)
     }
 
     // Calculate determinant for Matrix of Order = 2
-    if (m->rows == 2)
+    if (m.rows == 2)
     {
-        return m->data[0] * m->data[3] - m->data[1] * m->data[2];
+        return MAT_AT(m, 0, 0) * MAT_AT(m, 1, 1) - MAT_AT(m, 0, 1) * MAT_AT(m, 1, 0);
     }
 
-    double det_ = 0;
+    double determinant = 0;
+    Matrix minorMatrix = mat_alloc(m.rows - 1, m.cols - 1);
 
-    for (size_t i = 0; i < m->rows; ++i)
+    for (size_t i = 0; i < m.rows; ++i)
     {
-        Matrix minorMatrix = minor(m, 0, i);
+        for (size_t minor_i = 0, k = 0; k < m.rows; ++k)
+        {
+            if (k != i)
+            {
+                for (size_t j = 1; j < m.cols; ++j)
+                {
+                    MAT_AT(minorMatrix, minor_i, j - 1) = MAT_AT(m, k, j);
+                }
+                ++minor_i;
+            }
+        }
+
         int sign = (i % 2 == 0) ? 1 : -1;
-        det_ += sign * m->data[i] * det(&minorMatrix);
-        free(minorMatrix.data);
+        determinant += sign * MAT_AT(m, i, 0) * det(minorMatrix);
     }
-    return det_;
+
+    // Free memory for the minorMatrix
+    free(minorMatrix.data);
+
+    return determinant;
 }
 
-Matrix mat_minor(Matrix *m)
+Matrix mat_minor(Matrix m)
 {
     if (!isSquareMatrix(m))
     {
         HANDLE_ERROR_MSG("Minor Operations valid on Square Matrices only");
     }
 
-    Matrix result = mat_alloc(m->rows, m->cols);
+    Matrix result = mat_alloc(m.rows, m.cols);
 
-    for (size_t i = 0; i < m->rows; i++)
+    for (size_t i = 0; i < m.rows; i++)
     {
-        for (size_t j = 0; j < m->cols; j++)
+        for (size_t j = 0; j < m.cols; j++)
         {
             Matrix tempMinorMatrix = minor(m, i, j);
-            double det_ = det(&tempMinorMatrix);
+            double det_ = det(tempMinorMatrix);
             // *(result.data + i * result.cols + j) = det_;
             MAT_AT(result, i, j) = det_;
             free(tempMinorMatrix.data); // Free memory allocated for the temporary minor matrix
@@ -352,62 +366,62 @@ Matrix mat_minor(Matrix *m)
     return result;
 }
 
-double cof(Matrix *m, size_t r, size_t c)
+double cof(Matrix m, size_t r, size_t c)
 {
-    if (r < 0 || r >= m->rows && c < 0 || c >= m->cols)
+    if (r < 0 || r >= m.rows && c < 0 || c >= m.cols)
     {
         HANDLE_ERROR_MSG("Given row or column are out of bounds of the dimensions of Matrix. ");
     }
 
     double result;
     Matrix part = minor(m, r, c);
-    result = pow(-1, (r + c + 2)) * det(&part); // + 2 is added as it is 0 based indexed
+    result = pow(-1, (r + c + 2)) * det(part); // + 2 is added as it is 0 based indexed
     return result;
 }
 
-Matrix mat_cof(Matrix *m)
+Matrix mat_cof(Matrix m)
 {
     if (!isSquareMatrix(m))
     {
         HANDLE_ERROR_MSG("Cofactors operations valid on Square Matrices only");
     }
 
-    Matrix cofactor_matrix = {(double *)malloc(sizeof(double) * m->rows * m->cols), m->rows, m->cols};
+    Matrix cofactor_matrix = {(double *)malloc(sizeof(double) * m.rows * m.cols), m.rows, m.cols};
 
     if (cofactor_matrix.data == NULL)
     {
         HANDLE_ERROR_MSG("Memory Allocation Failed for Cofactor Matrix");
     }
 
-    for (size_t i = 0; i < m->rows; ++i)
+    for (size_t i = 0; i < m.rows; ++i)
     {
-        for (size_t j = 0; j < m->cols; ++j)
+        for (size_t j = 0; j < m.cols; ++j)
         {
             double result = cof(m, i, j);
-            // *(cofactor_matrix.data + i * m->cols + j) = result;
-            MAT_AT_EX(cofactor_matrix, i, m->cols, j) = result;
+            // *(cofactor_matrix.data + i * m.cols + j) = result;
+            MAT_AT_EX(cofactor_matrix, i, m.cols, j) = result;
         }
     }
 
     return cofactor_matrix;
 }
 
-Matrix adj(Matrix *m)
+Matrix adj(Matrix m)
 {
     if (!isSquareMatrix(m))
     {
         HANDLE_ERROR_MSG("Adjoint operations valid on Square Matrices only");
     }
 
-    Matrix adjoint = mat_alloc(m->rows, m->cols);
+    Matrix adjoint = mat_alloc(m.rows, m.cols);
 
-    for (size_t i = 0; i < m->rows; i++)
+    for (size_t i = 0; i < m.rows; i++)
     {
-        for (size_t j = 0; j < m->cols; j++)
+        for (size_t j = 0; j < m.cols; j++)
         {
             Matrix minor_mat = minor(m, i, j);
             int sign = ((i + j) % 2 == 0) ? 1 : -1;
-            int det_ = det(&minor_mat);
+            int det_ = det(minor_mat);
             // *(adjoint.data + j * adjoint.cols + i) = sign * det_;
             MAT_AT(adjoint, j, i) = sign * det_;
             free(minor_mat.data);
@@ -417,7 +431,7 @@ Matrix adj(Matrix *m)
     return adjoint;
 }
 
-Matrix inv(Matrix *m)
+Matrix inv(Matrix m)
 {
     if (!isSquareMatrix(m))
     {
@@ -426,27 +440,36 @@ Matrix inv(Matrix *m)
 
     double det_ = det(m);
 
-    if (det_ == 0)
+    if (det_ == 0.0)
     {
         HANDLE_ERROR_MSG("Inverse does not exist for a singular matrix (determinant is zero)");
     }
 
     Matrix adj_ = adj(m);
-    Matrix inverse_matrix = mat_alloc(m->rows, m->cols);
+    Matrix inverse_matrix = mat_alloc(m.rows, m.cols);
 
-    for (size_t i = 0; i < m->rows; i++)
+    for (size_t i = 0; i < m.rows; i++)
     {
-        for (size_t j = 0; j < m->cols; j++)
+        for (size_t j = 0; j < m.cols; j++)
         {
-            // *(inverse_matrix.data + i * inverse_matrix.cols + j) = *(adj_.data + i * adj_.cols + j) / (double)det_;
-            MAT_AT(inverse_matrix, i, j) = MAT_AT(adj_, i, j) / det_;
+            // Avoid division by zero
+            if (det_ != 0.0)
+            {
+                MAT_AT(inverse_matrix, i, j) = MAT_AT(adj_, i, j) / det_;
+            }
+            else
+            {
+                HANDLE_ERROR_MSG("Division by zero in inverse calculation");
+            }
         }
     }
+
+    free(adj_.data);
 
     return inverse_matrix;
 }
 
-double trace(Matrix *m)
+double trace(Matrix m)
 {
     if (!isSquareMatrix(m))
     {
@@ -454,12 +477,12 @@ double trace(Matrix *m)
     }
 
     double res = 0;
-    for (size_t i = 0; i < m->rows; ++i)
+    for (size_t i = 0; i < m.rows; ++i)
     {
-        for (size_t j = 0; j < m->cols; ++j)
+        for (size_t j = 0; j < m.cols; ++j)
         {
             if (i == j)
-                res += MAT_ATP(m, i, j);
+                res += MAT_AT(m, i, j);
         }
     }
     return res;
@@ -468,7 +491,7 @@ double trace(Matrix *m)
 Matrix null_mat(size_t rows, size_t cols)
 {
     Matrix null = mat_alloc(rows, cols);
-    clearMatrix(&null);
+    clear(null);
     return null;
 }
 
@@ -510,14 +533,14 @@ Matrix identity(size_t SIZE)
     return id;
 }
 
-void mat_mul_k(Matrix *m, double k)
+void mat_mul_k(Matrix m, double k)
 {
     // Multiply a matrix with a scalar value
-    for (size_t i = 0; i < m->rows; i++)
+    for (size_t i = 0; i < m.rows; i++)
     {
-        for (size_t j = 0; j < m->cols; j++)
+        for (size_t j = 0; j < m.cols; j++)
         {
-            MAT_ATP(m, i, j) *= k;
+            MAT_AT(m, i, j) *= k;
         }
     }
 }
