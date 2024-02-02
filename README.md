@@ -1,4 +1,4 @@
-# Matrix Operations in C
+# MATRIX_IN_C
 
 ## Overview
 
@@ -12,9 +12,7 @@ This C program provides a comprehensive set of functions to perform various oper
 - **Identity Matrix**: Generate an identity matrix of a given order.
 - **Scalar Multiplication**: Multiply a matrix by a scalar.
 - **Random Matrix Generation**: Generate a matrix with random values within a specified range.
-- **Matrix Comparison**: Check if two matrices are equal.
 - **Minor, Cofactor, and Adjoint Matrices**: Functions for minor, cofactor, and adjoint operations.
-- **Error Handling Macros**: Convenient macros for handling errors during matrix operations.
 
 ## Getting Started
 
@@ -81,6 +79,8 @@ int main() {
 - `identity`: Generate an identity matrix of a given order.
 - `mat_mul_k`: Multiply a matrix by a scalar.
 - `sum`: Calculate the sum of all elements in a matrix.
+- `mean`: Calculate mean across different axes.
+- `mean_dev`: Calculate mean deviation of a matrix.
 
 ## Error Handling
 
@@ -89,4 +89,4 @@ Macros (`HANDLE_ERROR`, `HANDLE_ERROR_EN`, and `HANDLE_ERROR_MSG`) efficiently h
 ## Acknowledgments
 
 - Author: Samarth Pyati
-- Version: 1.2 (17/1/24)
+- Version: 1.2 (28/1/24)
