@@ -648,6 +648,39 @@ Matrix mean(Matrix m, unsigned int axis)
     return result;
 }
 
+Matrix dev(Matrix m)
+{
+    Matrix dev = mat_alloc(m.rows, m.cols);
+    double _mean = MAT_AT(mean(m, 0), 0, 0);
+
+    for (size_t i = 0; i < m.rows; ++i)
+    {
+        for (size_t j = 0; j < m.cols; ++j)
+        {
+            MAT_AT(dev, i, j) = MAT_AT(m, i, j) - _mean;
+        }
+    }
+    return dev;
+}
+
+double mean_dev(Matrix m)
+{
+    double _mean_dev = MAT_AT(mean(dev(m), 0), 0, 0);
+    return _mean_dev;
+}
+
+// void std(Matrix m)
+// {
+//     double _mean = MAT_AT(mean(m, 0), 0, 0);
+//     for (size_t i = 0; i < m.rows; ++i)
+//     {
+//         for (size_t j = 0; j < m.cols; ++j)
+//         {
+//             NULL;
+//         }
+//     }
+// }
+
 #endif // MATRIX_H
 
 // #ifdef MATRIX_IMPLEMENTATION
