@@ -5,7 +5,7 @@
     Matrix data structure in C.
 
     @author Samarth Pyati
-    @version 1.2 25/1/24
+    @version 1.2 28/1/24
 */
 
 #ifndef MATRIX_H_
@@ -140,17 +140,16 @@ void view(Matrix matrix, unsigned viewOpt)
         printf("[");
         for (int j = 0; j < matrix.cols; j++)
         {
-            double el = MAT_AT(matrix, i, j);
             switch (viewOpt)
             {
             case 1:
-                printf(" %d ", (int)el);
+                printf(" %d ", (int)MAT_AT(matrix, i, j));
                 break;
             case 2:
-                printf(" %g ", el);
+                printf(" %g ", MAT_AT(matrix, i, j));
                 break;
             default:
-                printf(" %f ", el);
+                printf(" %f ", MAT_AT(matrix, i, j));
                 break;
             }
 
@@ -164,16 +163,31 @@ void view(Matrix matrix, unsigned viewOpt)
     printf("]\n\n");
 }
 
-void mat_rand(Matrix matrix, const int MAX, const int MIN)
+void mat_rand(Matrix m, const int MIN, const int MAX)
 {
     if (MIN > MAX)
-        HANDLE_ERROR_MSG("Incorrect assignment to Max and Min (!MIN > MAX)");
-    const int SIZE = matrix.rows * matrix.cols;
+        HANDLE_ERROR_MSG("Incorrect assignment to Max and Min (MIN > MAX)");
+    const int SIZE = m.rows * m.cols;
     for (unsigned int i = 0; i < SIZE; ++i)
     {
-        matrix.data[i] = rand() % (MAX - MIN + 1) + MIN;
+        m.data[i] = rand() % (MAX - MIN + 1) + MIN;
     }
 }
+
+void mat_randf(Matrix m, const int MIN, const int MAX)
+{
+    if (MIN > MAX)
+        HANDLE_ERROR_MSG("Incorrect assignment to Max and Min (MIN > MAX)");
+
+    const int SIZE = m.rows * m.cols;
+
+    for (unsigned int i = 0; i < SIZE; ++i)
+    {
+        double el = (double)rand() / (double)RAND_MAX; // float value between 0 and 1
+        m.data[i] = el * (MAX - MIN) + MIN;
+    }
+}
+
 
 Matrix mat_add(Matrix a, Matrix b)
 {
@@ -469,6 +483,19 @@ Matrix inv(Matrix m)
     return inverse_matrix;
 }
 
+Matrix mabs(Matrix m)
+{
+    /* return absolute values of the elements */
+    for (size_t i = 0; i < m.rows; ++i)
+    {
+        for (size_t j = 0; j < m.cols; ++j)
+        {
+            MAT_AT(m, i, j) = fabs(MAT_AT(m, i, j));
+        }
+    }
+    return m;
+}
+
 double trace(Matrix m)
 {
     if (!isSquareMatrix(m))
@@ -663,23 +690,13 @@ Matrix dev(Matrix m)
     return dev;
 }
 
+
 double mean_dev(Matrix m)
 {
-    double _mean_dev = MAT_AT(mean(dev(m), 0), 0, 0);
-    return _mean_dev;
+    Matrix _devs = mabs(dev(m)); // absolute deviations
+    return MAT_AT(mean(_devs, 0), 0, 0);
 }
 
-// void std(Matrix m)
-// {
-//     double _mean = MAT_AT(mean(m, 0), 0, 0);
-//     for (size_t i = 0; i < m.rows; ++i)
-//     {
-//         for (size_t j = 0; j < m.cols; ++j)
-//         {
-//             NULL;
-//         }
-//     }
-// }
 
 #endif // MATRIX_H
 
