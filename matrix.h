@@ -698,6 +698,28 @@ double mean_dev(Matrix m)
 }
 
 
+double var(Matrix m)
+{
+    Matrix _dev = dev(m);
+    double res = 0;
+
+    for (size_t i = 0; i < _dev.rows; ++i)
+    {
+        for (size_t j = 0; j < _dev.cols; ++j)
+        {
+            res += pow(MAT_AT(_dev, i, j), 2);
+        }
+    }
+
+    res /= (double) getTotalElements(_dev);
+    return res;
+}
+
+double std(Matrix m)
+{
+    return sqrt(var(m));
+}
+
 #endif // MATRIX_H
 
 // #ifdef MATRIX_IMPLEMENTATION
