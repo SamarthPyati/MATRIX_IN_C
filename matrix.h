@@ -640,7 +640,7 @@ Matrix mean(Matrix m, unsigned int axis)
         double mean = sum / getTotalElements(m);
         MAT_AT(result, 0, 0) = mean;
         break;
-    case 1: // Row-wise
+    case 2: // Row-wise
         result = mat_alloc(m.rows, 1);
         for (size_t i = 0; i < m.rows; i++)
         {
@@ -653,7 +653,7 @@ Matrix mean(Matrix m, unsigned int axis)
             MAT_AT(result, i, 0) = mean;
         }
         break;
-    case 2: // Column-wise
+    case 1: // Column-wise
         result = mat_alloc(1, m.cols);
         for (size_t j = 0; j < m.cols; j++)
         {
@@ -698,27 +698,92 @@ double mean_dev(Matrix m)
 }
 
 
-double var(Matrix m)
+Matrix var(Matrix m, unsigned int axis)
 {
     Matrix _dev = dev(m);
-    double res = 0;
+    Matrix res;
 
-    for (size_t i = 0; i < _dev.rows; ++i)
+    switch (axis)
     {
-        for (size_t j = 0; j < _dev.cols; ++j)
+    case 0:
+        res = mat_alloc(1, 1);
+        double _res = 0;
+        for (size_t i = 0; i < _dev.rows; ++i)
         {
-            res += pow(MAT_AT(_dev, i, j), 2);
+            for (size_t j = 0; j < _dev.cols; ++j)
+            {
+                _res += pow(MAT_AT(_dev, i, j), 2);
+            }
         }
+        _res /= (double)getTotalElements(_dev);
+        MAT_AT(res, 0, 0) = _res;
+        break;
+    case 1:         // row wise
+        res = mat_alloc(m.rows, 1);
+        for (size_t i = 0; i < m.rows; ++i)
+        {
+            double _res = 0.0;
+            for (size_t j = 0; j < m.cols; ++j)
+            {
+                _res += pow(MAT_AT(_dev, i, j), 2);
+            }
+            _res /= (double) m.rows;
+            MAT_AT(res, i, 0) = _res;
+        }
+        break;
+    case 2:         // column wise
+        res = mat_alloc(1, m.cols);
+        for (size_t j = 0; j < m.cols; ++j)
+        {
+            double _res = 0.0;
+            for (size_t i = 0; i < m.rows; ++i)
+            {
+                _res += pow(MAT_AT(_dev, i, j), 2);
+            }
+            _res /= (double) m.cols;
+            MAT_AT(res, 0, j) = _res;
+        }
+        break;
+    default:
+        HANDLE_ERROR_MSG("Invalid axis value. Use 0 to get whole variance, 1 for row-wise variance, and 2 for column-wise variance.");
+        break;
     }
 
-    res /= (double) getTotalElements(_dev);
     return res;
 }
 
-double std(Matrix m)
+Matrix std(Matrix m, unsigned int axis)
 {
-    return sqrt(var(m));
+    Matrix res;
+
+    switch (axis)
+    {
+    case 0:
+        res = mat_alloc(1, 1);
+        MAT_AT(res, 0, 0) = sqrt(MAT_AT(var(m, 0), 0, 0));
+        break;
+    case 1: // row wise
+        res = mat_alloc(m.rows, 1);
+        for (size_t i = 0; i < m.rows; ++i)
+        {
+            MAT_AT(res, i, 0) = sqrt(MAT_AT(var(m, 1), i, 0));
+        }
+        break;
+    case 2:
+        res = mat_alloc(1, m.cols);
+        for (size_t j = 0; j < m.cols; j++)
+        {
+            MAT_AT(res, 0, j) = sqrt(MAT_AT(var(m, 2), 0, j));
+        }
+        break;
+    default:
+        HANDLE_ERROR_MSG("Invalid axis value. Use 0 to get whole standard deviation, 1 for row-wise and 2 for column-wise standard deviation.");
+        break;
+    }
+
+    return res;
 }
+
 
 #endif // MATRIX_H
 
