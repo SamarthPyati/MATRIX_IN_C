@@ -5,7 +5,7 @@
     Matrix data structure in C.
 
     @author Samarth Pyati
-    @version 1.2 28/1/24
+    @version 1.3 12/2/24
 */
 
 #ifndef MATRIX_H_
@@ -22,7 +22,7 @@
 #define True 1
 #define False 0
 
-/* Macros for Handling Error Messages */
+/* Macros for Handling Error Messages - From man pages of pthread_*/
 #define HANDLE_ERROR(msg)   \
     do                      \
     {                       \
@@ -79,8 +79,13 @@ Matrix mat_alloc(size_t rows, size_t cols)
     m.cols = cols;
     m.data = malloc(sizeof(*m.data) * rows * cols);
     if (m.data == NULL)
-        HANDLE_ERROR_MSG("Memory Allocation Failed");
+        HANDLE_ERROR_MSG("MAT_ALLOC: Memory Allocation Failed");
     return m;
+}
+
+void free_mat(Matrix m)
+{
+    free(m.data);
 }
 
 void mat_populate(Matrix *m, double *data_)
@@ -166,7 +171,7 @@ void view(Matrix matrix, unsigned viewOpt)
 void mat_rand(Matrix m, const int MIN, const int MAX)
 {
     if (MIN > MAX)
-        HANDLE_ERROR_MSG("Incorrect assignment to Max and Min (MIN > MAX)");
+        HANDLE_ERROR_MSG("RAND: Incorrect assignment to Max and Min (MIN > MAX)");
     const int SIZE = m.rows * m.cols;
     for (unsigned int i = 0; i < SIZE; ++i)
     {
@@ -177,7 +182,7 @@ void mat_rand(Matrix m, const int MIN, const int MAX)
 void mat_randf(Matrix m, const int MIN, const int MAX)
 {
     if (MIN > MAX)
-        HANDLE_ERROR_MSG("Incorrect assignment to Max and Min (MIN > MAX)");
+        HANDLE_ERROR_MSG("RAND_F: Incorrect assignment to Max and Min (MIN > MAX)");
 
     const int SIZE = m.rows * m.cols;
 
@@ -193,7 +198,7 @@ Matrix mat_add(Matrix a, Matrix b)
 {
     if (!(a.rows == b.rows && a.cols == b.cols))
     {
-        HANDLE_ERROR_MSG("Matrices should have same order in Addition");
+        HANDLE_ERROR_MSG("ADD: Matrices should have same order in Addition");
     }
 
     Matrix result = mat_alloc(a.rows, a.cols);
@@ -213,7 +218,7 @@ Matrix mat_sub(Matrix a, Matrix b)
 {
     if (!(a.rows == b.rows && a.cols == b.cols))
     {
-        HANDLE_ERROR_MSG("Matrices should have same order for Subtraction");
+        HANDLE_ERROR_MSG("SUB: Matrices should have same order for Subtraction");
     }
 
     Matrix result = mat_alloc(a.rows, a.cols);
@@ -234,7 +239,7 @@ Matrix mat_mul(Matrix a, Matrix b)
     // A = 2 x 3 || B = 3 x 2, RESULT = 2 x 2
     if (a.cols != b.rows)
     {
-        HANDLE_ERROR_MSG("Inappropriate order for matrix multiplication");
+        HANDLE_ERROR_MSG("MAT_MUL: Inappropriate order for matrix multiplication");
     }
 
     int rows = a.rows;
@@ -284,7 +289,7 @@ Matrix minor(Matrix matrix, int r, int c)
 {
     if (r < 0 || r >= matrix.rows && c < 0 || c >= matrix.cols)
     {
-        HANDLE_ERROR_MSG("Given row or column are out of bounds of the dimensions of Matrix.");
+        HANDLE_ERROR_MSG("MINOR: Given row or column are out of bounds of the dimensions of Matrix.");
     }
 
     Matrix minor_ = mat_alloc(matrix.rows - 1, matrix.cols - 1);
@@ -321,7 +326,7 @@ double det(Matrix m)
 {
     if (!isSquareMatrix(m))
     {
-        HANDLE_ERROR_MSG("Determinant only defined for square matrices (ORDER: n x n)");
+        HANDLE_ERROR_MSG("DET: Determinant only defined for square matrices (ORDER: n x n)");
     }
 
     // Calculate determinant for Matrix of Order = 2
@@ -361,7 +366,7 @@ Matrix mat_minor(Matrix m)
 {
     if (!isSquareMatrix(m))
     {
-        HANDLE_ERROR_MSG("Minor Operations valid on Square Matrices only");
+        HANDLE_ERROR_MSG("MINOR: Minor Operations valid on Square Matrices only");
     }
 
     Matrix result = mat_alloc(m.rows, m.cols);
@@ -384,7 +389,7 @@ double cof(Matrix m, size_t r, size_t c)
 {
     if (r < 0 || r >= m.rows && c < 0 || c >= m.cols)
     {
-        HANDLE_ERROR_MSG("Given row or column are out of bounds of the dimensions of Matrix. ");
+        HANDLE_ERROR_MSG("COF: Given row or column are out of bounds of the dimensions of Matrix. ");
     }
 
     double result;
@@ -397,14 +402,14 @@ Matrix mat_cof(Matrix m)
 {
     if (!isSquareMatrix(m))
     {
-        HANDLE_ERROR_MSG("Cofactors operations valid on Square Matrices only");
+        HANDLE_ERROR_MSG("M_COF: Cofactors operations valid on Square Matrices only");
     }
 
     Matrix cofactor_matrix = {(double *)malloc(sizeof(double) * m.rows * m.cols), m.rows, m.cols};
 
     if (cofactor_matrix.data == NULL)
     {
-        HANDLE_ERROR_MSG("Memory Allocation Failed for Cofactor Matrix");
+        HANDLE_ERROR_MSG("M_COF: Memory Allocation Failed for Cofactor Matrix");
     }
 
     for (size_t i = 0; i < m.rows; ++i)
@@ -424,7 +429,7 @@ Matrix adj(Matrix m)
 {
     if (!isSquareMatrix(m))
     {
-        HANDLE_ERROR_MSG("Adjoint operations valid on Square Matrices only");
+        HANDLE_ERROR_MSG("ADJ: Adjoint operations valid on Square Matrices only");
     }
 
     Matrix adjoint = mat_alloc(m.rows, m.cols);
@@ -449,14 +454,14 @@ Matrix inv(Matrix m)
 {
     if (!isSquareMatrix(m))
     {
-        HANDLE_ERROR_MSG("Inverse operation valid on Square Matrices only");
+        HANDLE_ERROR_MSG("INV: Inverse operation valid on Square Matrices only");
     }
 
     double det_ = det(m);
 
     if (det_ == 0.0)
     {
-        HANDLE_ERROR_MSG("Inverse does not exist for a singular matrix (determinant is zero)");
+        HANDLE_ERROR_MSG("INV: Inverse does not exist for a singular matrix (determinant is zero)");
     }
 
     Matrix adj_ = adj(m);
@@ -473,7 +478,7 @@ Matrix inv(Matrix m)
             }
             else
             {
-                HANDLE_ERROR_MSG("Division by zero in inverse calculation");
+                HANDLE_ERROR_MSG("INV: Division by zero in inverse calculation");
             }
         }
     }
@@ -500,7 +505,7 @@ double trace(Matrix m)
 {
     if (!isSquareMatrix(m))
     {
-        HANDLE_ERROR_MSG("Trace operations valid only on square Matrices.");
+        HANDLE_ERROR_MSG("TRACE: Trace operations valid only on square Matrices.");
     }
 
     double res = 0;
@@ -615,7 +620,7 @@ Matrix sum(Matrix m, unsigned int axis)
         break;
     default:
         // Handle invalid axis value
-        HANDLE_ERROR_MSG("Invalid axis value. Use 0 to get whole sum 1 for row-wise and 2 for column-wise.");
+        HANDLE_ERROR_MSG("SUM: Invalid axis value. Use 0 to get whole sum 1 for row-wise and 2 for column-wise.");
         break;
     }
     return result;
@@ -668,7 +673,7 @@ Matrix mean(Matrix m, unsigned int axis)
         break;
     default:
         // Handle invalid axis value
-        HANDLE_ERROR_MSG("Invalid axis value. Use 0 to get whole mean, 1 for row-wise mean, and 2 for column-wise mean.");
+        HANDLE_ERROR_MSG("MEAN: Invalid axis value. Use 0 to get whole mean, 1 for row-wise mean, and 2 for column-wise mean.");
         break;
     }
 
@@ -745,7 +750,7 @@ Matrix var(Matrix m, unsigned int axis)
         }
         break;
     default:
-        HANDLE_ERROR_MSG("Invalid axis value. Use 0 to get whole variance, 1 for row-wise variance, and 2 for column-wise variance.");
+        HANDLE_ERROR_MSG("VAR: Invalid axis value. Use 0 to get whole variance, 1 for row-wise variance, and 2 for column-wise variance.");
         break;
     }
 
@@ -777,11 +782,37 @@ Matrix std(Matrix m, unsigned int axis)
         }
         break;
     default:
-        HANDLE_ERROR_MSG("Invalid axis value. Use 0 to get whole standard deviation, 1 for row-wise and 2 for column-wise standard deviation.");
+        HANDLE_ERROR_MSG("STD: Invalid axis value. Use 0 to get whole standard deviation, 1 for row-wise and 2 for column-wise standard deviation.");
         break;
     }
 
     return res;
+}
+
+Matrix aug(Matrix a, Matrix b)
+{
+    if (a.rows != b.rows)
+    {
+        HANDLE_ERROR_MSG("AUG: Can`t augment matrices. Number of rows not same.");
+    }
+
+    Matrix aug = mat_alloc(a.rows, (a.cols + b.cols));
+
+    for (size_t i = 0; i < aug.rows; ++i)
+    {
+        for (size_t j = 0; j < aug.cols; ++j)
+        {
+            if (j < a.cols)
+            {
+                MAT_AT(aug, i, j) = MAT_AT(a, i, j);
+            }
+            else
+            {
+                MAT_AT(aug, i, j) = MAT_AT(b, i, j - a.cols);
+            }
+        }
+    }
+    return aug;
 }
 
 

@@ -88,5 +88,5 @@ Macros (`HANDLE_ERROR`, `HANDLE_ERROR_EN`, and `HANDLE_ERROR_MSG`) efficiently h
 
 ## Acknowledgments
 
-- Author: Samarth Pyati
-- Version: 1.2 (28/1/24)
+- Author: Samarth Sanjay Pyati
+- Version: 1.3 (12/2/24)
