@@ -25,30 +25,39 @@ To use the matrix operations in your C program:
 5. Perform various operations on matrices using the provided functions.
 
 ```c
-#include "matrices.h"
+#include "matrix.h"
 
-int main() {
+int main(void)
+{
     // Example usage
-    time_t t;
-    srand(t);        // Set the seed for Randomise function
-    
-    Matrix c = mat_alloc(3, 3);
-    mat_rand(c, 100, 10);
-    view(c, 1);
+    time_t t;           // seed Randomise function
+    srand(t);
 
-    Matrix d = mat_alloc(3, 3);
-    mat_rand(d, 100, 10);
-    view(d, 1);
+    // Allocate matrices and randomise the matrix
+    Matrix *c = mat_alloc(3, 3);
+    mat_randf(c, 1, 10);
+    view(c, 2);
 
-    // viewing the matrix by doing different operations on it
+    Matrix *d = mat_alloc(3, 3);
+    mat_randf(d, 10, 100);
+    view(d, 2);
+
+    // Operations on matrices
+    view(aug(c, d), 2);
+    view(identity(4), 1);
+    view(var(c, 2), 0);
     view(mat_mul(c, d), 1);
     view(mat_add(c, d), 1);
     view(mat_sub(c, d), 1);
     view(mat_cof(c), 1);
     view(mat_mul(inv(d), d), 0);
+    view(sum(c, 2), 1);
+    view(mean(c, 1), 1);
+    view(std(c, 2), 0);
+    view(var(c, 0), 0);
 
-    double s = sum(d);
-    printf("SUM: %f\n", s);
+    printf("Mean Deviation: %lf\n", mean_dev(c));
+    printf("Det(A) & Det(B): %f , %f \n", det(c), det(d));
     printf("SQUARE ? %d\n", isSquareMatrix(c));
     printf("SYM ? %d\n", isSym(c));
 }

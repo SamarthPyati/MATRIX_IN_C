@@ -1,7 +1,9 @@
 /**
     Matrix Multiplication
-    matrices.c (improved Version)
-    "Using 2D array instead of a singular Array."
+    matrices.c (improved branch)
+
+    "Working with pass by references instead of pass by value
+    to increase performance and lower memory usage."
     Matrix data structure in C.
 
     @author Samarth Pyati
@@ -18,9 +20,6 @@
 #include <errno.h>
 #include <string.h>
 #include <time.h>
-
-#define True 1
-#define False 0
 
 /* Macros for Handling Error Messages - From man pages of pthread_*/
 #define HANDLE_ERROR(msg)   \
@@ -41,211 +40,226 @@
 #define HANDLE_ERROR_MSG(msg)                       \
     do                                              \
     {                                               \
-        fprintf(stderr, "Matrix_Error: %s\n", msg); \
+        fprintf(stderr, "MAT_ERR: %s\n", msg);      \
         exit(EXIT_FAILURE);                         \
     } while (0)
 
-/* THE MAIN STRUCTURE OF MATRIX */
+
 typedef struct
 {
+    /* THE MAIN STRUCTURE OF MATRIX */
     double *data;
     size_t rows;
     size_t cols;
 } Matrix;
 
+
 /* Fetch the element at a certain position (i, j) in the matrix*/
 #define MAT_AT(m, i, j) (m).data[(i) * (m).cols + (j)]
-#define MAT_ATP(m, i, j) (m)->data[(i) * (m)->cols + (j)] // P -> pointer refr
+#define MAT_AT_P(m, i, j) (m)->data[(i) * (m)->cols + (j)] // P -> pointer refr
 
-/* explicit declarations of positions of elements in the matrices*/
+/* Explicit declarations of positions of elements in the matrices*/
 #define MAT_AT_EX(m, i, cols, j) (m).data[(i) * (cols) + (j)]
 #define MAT_AT_EX_P(m, i, cols, j) (m)->data[(i) * (cols) + (j)]
 
-void getMatrixOrder(Matrix matrix)
+void getMatrixOrder(Matrix *m)
 {
-    printf("%zu x %zu\n", matrix.rows, matrix.cols);
+    printf("%zu x %zu\n", m->rows, m->cols);
 }
 
-size_t getTotalElements(Matrix m)
+size_t getTotalElements(Matrix *m)
 {
-    return m.rows * m.cols;
+    return m->rows * m->cols;
 }
 
-/* Allocate certain amount of memory to matrices */
-Matrix mat_alloc(size_t rows, size_t cols)
+
+Matrix *mat_alloc(size_t rows, size_t cols)
 {
-    Matrix m;
-    m.rows = rows;
-    m.cols = cols;
-    m.data = malloc(sizeof(*m.data) * rows * cols);
-    if (m.data == NULL)
+    /* Allocate certain amount of memory to matrix */
+    Matrix *m = (Matrix *) malloc(sizeof(Matrix));
+    m->rows = rows;
+    m->cols = cols;
+    // Not casting types explicitly to work with diff types later
+    m->data = malloc(sizeof(*m->data) * rows * cols);
+    if (m->data == NULL)
         HANDLE_ERROR_MSG("MAT_ALLOC: Memory Allocation Failed");
     return m;
 }
 
-void free_mat(Matrix m)
+void free_mat(Matrix *m)
 {
-    free(m.data);
+    /* Free the memory which has been mallocated to matrix */
+    free(m->data);
+    free(m);
 }
 
 void mat_populate(Matrix *m, double *data_)
 {
+    /* Populate a given array into the matrix */
     memcpy(m->data, data_, sizeof(double) * m->rows * m->cols);
 }
 
-int isSquareMatrix(Matrix matrix)
+int isSquareMatrix(Matrix *matrix)
 {
-    return (matrix.rows == matrix.cols);
+    return (matrix->rows == matrix->cols);
 }
 
-int isEqual(Matrix a, Matrix b)
+int isEqual(Matrix *a, Matrix *b)
 {
-    // dimensions
-    if (!(a.rows == b.rows && a.cols == b.cols))
+    /* Check equality of two given matrices */
+    if (!(a->rows == b->rows && a->cols == b->cols))
     {
         return 0;
     }
 
-    for (size_t i = 0; i < a.rows; ++i)
+    for (size_t i = 0; i < a->rows; ++i)
     {
-        for (size_t j = 0; j < a.cols; ++j)
+        for (size_t j = 0; j < a->cols; ++j)
         {
-            if (MAT_AT(a, i, j) != MAT_AT(b, i, j))
+            if (MAT_AT_P(a, i, j) != MAT_AT_P(b, i, j))
                 return 0;
         }
     }
     return 1;
 }
 
-Matrix transpose(Matrix m);
-int isSym(Matrix m)
+Matrix *transpose(Matrix *m);
+int isSym(Matrix *m)
 {
+    /* Check if a matrix is symmentric */
     if (isEqual(m, transpose(m)))
         return 1;
     return 0;
 }
 
-void clear(Matrix matrix)
+void clear(Matrix *m)
 {
-    for (int i = 0; i < matrix.rows; ++i)
+    /* Set all elements in matrix to 0 */
+    for (int i = 0; i < m->rows; ++i)
     {
-        for (int j = 0; j < matrix.cols; ++j)
+        for (int j = 0; j < m->cols; ++j)
         {
-            MAT_AT(matrix, i, j) = 0;
+            MAT_AT_P(m, i, j) = 0;
         }
     }
 }
 
 // row Major
-void view(Matrix matrix, unsigned viewOpt)
+void view(Matrix *m, unsigned viewOpt)
 {
+    /* Print the matrix in a formatted Matrix */
     printf("[");
-    for (int i = 0; i < matrix.rows; i++)
+    for (int i = 0; i < m->rows; i++)
     {
         printf("[");
-        for (int j = 0; j < matrix.cols; j++)
+        for (int j = 0; j < m->cols; j++)
         {
             switch (viewOpt)
             {
             case 1:
-                printf(" %d ", (int)MAT_AT(matrix, i, j));
+                printf(" %d ", (int)MAT_AT_P(m, i, j));
                 break;
             case 2:
-                printf(" %g ", MAT_AT(matrix, i, j));
+                printf(" %g ", MAT_AT_P(m, i, j));
                 break;
             default:
-                printf(" %f ", MAT_AT(matrix, i, j));
+                printf(" %f ", MAT_AT_P(m, i, j));
                 break;
             }
 
-            if (j < matrix.cols - 1)
+            if (j < m->cols - 1)
                 printf(","); // comma
         }
         printf("]");
-        if (i < matrix.rows - 1)
+        if (i < m->rows - 1)
             printf("\n"); // newline
     }
     printf("]\n\n");
 }
 
-void mat_rand(Matrix m, const int MIN, const int MAX)
+void mat_rand(Matrix *m, const int MIN, const int MAX)
 {
+    /* Generate a random matrix with int elements in range(MIN, MAX) */
     if (MIN > MAX)
         HANDLE_ERROR_MSG("RAND: Incorrect assignment to Max and Min (MIN > MAX)");
-    const int SIZE = m.rows * m.cols;
+    const int SIZE = m->rows * m->cols;
     for (unsigned int i = 0; i < SIZE; ++i)
     {
-        m.data[i] = rand() % (MAX - MIN + 1) + MIN;
+        m->data[i] = rand() % (MAX - MIN + 1) + MIN;
     }
 }
 
-void mat_randf(Matrix m, const int MIN, const int MAX)
+void mat_randf(Matrix *m, const int MIN, const int MAX)
 {
+    /* Generate a random matrix with double elements in range(MIN, MAX) */
     if (MIN > MAX)
         HANDLE_ERROR_MSG("RAND_F: Incorrect assignment to Max and Min (MIN > MAX)");
 
-    const int SIZE = m.rows * m.cols;
+    const int SIZE = m->rows * m->cols;
 
     for (unsigned int i = 0; i < SIZE; ++i)
     {
         double el = (double)rand() / (double)RAND_MAX; // float value between 0 and 1
-        m.data[i] = el * (MAX - MIN) + MIN;
+        m->data[i] = el * (MAX - MIN) + MIN;
     }
 }
 
 
-Matrix mat_add(Matrix a, Matrix b)
+Matrix *mat_add(Matrix *a, Matrix *b)
 {
-    if (!(a.rows == b.rows && a.cols == b.cols))
+    /* Add two given matrices */
+    if (!(a->rows == b->rows && a->cols == b->cols))
     {
         HANDLE_ERROR_MSG("ADD: Matrices should have same order in Addition");
     }
 
-    Matrix result = mat_alloc(a.rows, a.cols);
+    Matrix *result = mat_alloc(a->rows, a->cols);
 
-    for (size_t i = 0; i < a.rows; i++)
+    for (size_t i = 0; i < a->rows; i++)
     {
-        for (size_t j = 0; j < a.cols; j++)
+        for (size_t j = 0; j < a->cols; j++)
         {
-            // *(result.data + i * result.cols + j) = *(a.data + i * a.cols + j) + *(b.data + i * b.cols + j);
-            MAT_AT(result, i, j) = MAT_AT(a, i, j) + MAT_AT(b, i, j);
+            MAT_AT_P(result, i, j) = MAT_AT_P(a, i, j) + MAT_AT_P(b, i, j);
         }
     }
     return result;
 }
 
-Matrix mat_sub(Matrix a, Matrix b)
+Matrix *mat_sub(Matrix *a, Matrix *b)
 {
-    if (!(a.rows == b.rows && a.cols == b.cols))
+    /* Subtract two given matrices */
+    if (!(a->rows == b->rows && a->cols == b->cols))
     {
         HANDLE_ERROR_MSG("SUB: Matrices should have same order for Subtraction");
     }
 
-    Matrix result = mat_alloc(a.rows, a.cols);
+    Matrix *result = mat_alloc(a->rows, a->cols);
 
-    for (size_t i = 0; i < a.rows; i++)
+    for (size_t i = 0; i < a->rows; i++)
     {
-        for (size_t j = 0; j < a.cols; j++)
+        for (size_t j = 0; j < a->cols; j++)
         {
-            // *(result.data + i * result.cols + j) = *(a.data + i * a.cols + j) - *(b.data + i * b.cols + j);
-            MAT_AT(result, i, j) = MAT_AT(a, i, j) - MAT_AT(b, i, j);
+            MAT_AT_P(result, i, j) = MAT_AT_P(a, i, j) - MAT_AT_P(b, i, j);
         }
     }
     return result;
 }
 
-Matrix mat_mul(Matrix a, Matrix b)
+Matrix *mat_mul(Matrix *a, Matrix *b)
 {
-    // A = 2 x 3 || B = 3 x 2, RESULT = 2 x 2
-    if (a.cols != b.rows)
+    /* Multiply Two given matrices */
+
+    // Condition for mat_mul: A = 2 x 3 || B = 3 x 2, RESULT = 2 x 2
+
+    if (a->cols != b->rows)
     {
         HANDLE_ERROR_MSG("MAT_MUL: Inappropriate order for matrix multiplication");
     }
 
-    int rows = a.rows;
-    int cols = a.cols;
+    int rows = a->rows;
+    int cols = a->cols;
 
-    Matrix result = mat_alloc(a.rows, b.cols);
+    Matrix *result = mat_alloc(a->rows, b->cols);
 
     for (size_t i = 0; i < rows; i++)
     {
@@ -255,57 +269,58 @@ Matrix mat_mul(Matrix a, Matrix b)
             int sum = 0;
             for (size_t k = 0; k < cols; k++)
             {
-                // sum += (*(a.data + i * cols + k)) * (*(b.data + k * cols + j));
-                sum += MAT_AT_EX(a, i, cols, k) * MAT_AT_EX(b, k, cols, j);
+                // sum += (*(a->data + i * cols + k)) * (*(b->data + k * cols + j));
+                sum += MAT_AT_EX_P(a, i, cols, k) * MAT_AT_EX_P(b, k, cols, j);
             }
-            // *(result.data + i * cols + j) = sum;
-            MAT_AT_EX(result, i, cols, j) = sum;
+            // *(result->data + i * cols + j) = sum;
+            MAT_AT_EX_P(result, i, result->cols, j) = sum;
         }
     }
     return result;
 }
 
-Matrix transpose(Matrix m)
+Matrix *transpose(Matrix *m)
 {
-    int rows = m.cols;
-    int cols = m.rows;
+    /* Calculate Transpose of Matrix */
+    size_t rows = m->cols;
+    size_t cols = m->rows;
     // A, A` | A[i][j] = A`[j][i]
-    Matrix result = mat_alloc(rows, cols);
+    Matrix *result = mat_alloc(rows, cols);
     // row & cols are swapped
 
     for (size_t i = 0; i < rows; ++i)
     {
         for (size_t j = 0; j < cols; ++j)
         {
-            // *(result.data + i * cols + j) = *(m.data + j * rows + i);
-            MAT_AT(result, i, j) = MAT_AT(m, j, i);
+            MAT_AT_P(result, i, j) = MAT_AT_P(m, j, i);
         }
     }
     return result;
 }
 
-/* Gets the minor Matrix of a element in a matrix */
-Matrix minor(Matrix matrix, int r, int c)
+
+Matrix *minor(Matrix *m, int r, int c)
 {
-    if (r < 0 || r >= matrix.rows && c < 0 || c >= matrix.cols)
+    /* Gets the minor Matrix of a element in a matrix */
+    if (r < 0 || r >= m->rows && c < 0 || c >= m->cols)
     {
-        HANDLE_ERROR_MSG("MINOR: Given row or column are out of bounds of the dimensions of Matrix.");
+        HANDLE_ERROR_MSG("MINOR: Given row or column are out of bounds of the dimensions of matrix.");
     }
 
-    Matrix minor_ = mat_alloc(matrix.rows - 1, matrix.cols - 1);
+    Matrix *minor_ = mat_alloc(m->rows - 1, m->cols - 1);
 
     int minorRows = 0, minorCols = 0;
 
-    for (int i = 0; i < matrix.rows; i++)
+    for (int i = 0; i < m->rows; i++)
     {
         if (i == r)
         {
             continue; // skipping the row of minor_ element
         }
 
-        minorCols = 0; // Reset minor_ column for each row in the original matrix
+        minorCols = 0; // Reset minor_ column for each row in the original m
 
-        for (int j = 0; j < matrix.cols; j++)
+        for (int j = 0; j < m->cols; j++)
         {
             if (j == c)
             {
@@ -313,8 +328,8 @@ Matrix minor(Matrix matrix, int r, int c)
             }
 
             // copying the desired data
-            // *(minor_.data + minorRows * minor_.cols + minorCols) = *(matrix.data + i * matrix.cols + j);
-            MAT_AT(minor_, minorRows, minorCols) = MAT_AT(matrix, i, j);
+            // *(minor_->data + minorRows * minor_->cols + minorCols) = *(m->data + i * m->cols + j);
+            MAT_AT_P(minor_, minorRows, minorCols) = MAT_AT_P(m, i, j);
             minorCols++;
         }
         minorRows++;
@@ -322,136 +337,143 @@ Matrix minor(Matrix matrix, int r, int c)
     return minor_;
 }
 
-double det(Matrix m)
+double det(Matrix *m)
 {
+    /* Calculate determinant of the given matrix */
     if (!isSquareMatrix(m))
     {
         HANDLE_ERROR_MSG("DET: Determinant only defined for square matrices (ORDER: n x n)");
     }
 
     // Calculate determinant for Matrix of Order = 2
-    if (m.rows == 2)
+    if (m->rows == 2 && m->cols == 2)
     {
-        return MAT_AT(m, 0, 0) * MAT_AT(m, 1, 1) - MAT_AT(m, 0, 1) * MAT_AT(m, 1, 0);
+        return MAT_AT_P(m, 0, 0) * MAT_AT_P(m, 1, 1) - MAT_AT_P(m, 0, 1) * MAT_AT_P(m, 1, 0);
     }
 
-    double determinant = 0;
-    Matrix minorMatrix = mat_alloc(m.rows - 1, m.cols - 1);
+    double determinant = 0.0;
+    Matrix *minorMatrix = mat_alloc(m->rows - 1, m->cols - 1);
 
-    for (size_t i = 0; i < m.rows; ++i)
+    for (size_t i = 0; i < m->rows; ++i)
     {
-        for (size_t minor_i = 0, k = 0; k < m.rows; ++k)
+        for (size_t minor_i = 0, k = 0; k < m->rows; ++k)
         {
             if (k != i)
             {
-                for (size_t j = 1; j < m.cols; ++j)
+                for (size_t j = 1; j < m->cols; ++j)
                 {
-                    MAT_AT(minorMatrix, minor_i, j - 1) = MAT_AT(m, k, j);
+                    MAT_AT_P(minorMatrix, minor_i, j - 1) = MAT_AT_P(m, k, j);
                 }
                 ++minor_i;
             }
         }
 
         int sign = (i % 2 == 0) ? 1 : -1;
-        determinant += sign * MAT_AT(m, i, 0) * det(minorMatrix);
+        determinant += sign * MAT_AT_P(m, i, 0) * det(minorMatrix);
     }
 
     // Free memory for the minorMatrix
-    free(minorMatrix.data);
+    free_mat(minorMatrix);
 
     return determinant;
 }
 
-Matrix mat_minor(Matrix m)
+Matrix *mat_minor(Matrix *m)
 {
+    /* Returns a matrix containing minors of all elements of given Matrix */
     if (!isSquareMatrix(m))
     {
         HANDLE_ERROR_MSG("MINOR: Minor Operations valid on Square Matrices only");
     }
 
-    Matrix result = mat_alloc(m.rows, m.cols);
+    Matrix *result = mat_alloc(m->rows, m->cols);
 
-    for (size_t i = 0; i < m.rows; i++)
+    for (size_t i = 0; i < m->rows; i++)
     {
-        for (size_t j = 0; j < m.cols; j++)
+        for (size_t j = 0; j < m->cols; j++)
         {
-            Matrix tempMinorMatrix = minor(m, i, j);
+            Matrix *tempMinorMatrix = minor(m, i, j);
             double det_ = det(tempMinorMatrix);
-            // *(result.data + i * result.cols + j) = det_;
-            MAT_AT(result, i, j) = det_;
-            free(tempMinorMatrix.data); // Free memory allocated for the temporary minor matrix
+            // *(result->data + i * result->cols + j) = det_;
+            MAT_AT_P(result, i, j) = det_;
+            free_mat(tempMinorMatrix); // Free memory allocated for the temporary minor matrix
         }
     }
     return result;
 }
 
-double cof(Matrix m, size_t r, size_t c)
+double cof(Matrix *m, size_t r, size_t c)
 {
-    if (r < 0 || r >= m.rows && c < 0 || c >= m.cols)
+    /* Calculate cofactor of specific element a(r, c) in Matrix m */
+    if (r < 0 || r >= m->rows || c < 0 || c >= m->cols)
     {
         HANDLE_ERROR_MSG("COF: Given row or column are out of bounds of the dimensions of Matrix. ");
     }
 
     double result;
-    Matrix part = minor(m, r, c);
+    Matrix *part = minor(m, r, c);
     result = pow(-1, (r + c + 2)) * det(part); // + 2 is added as it is 0 based indexed
+    free_mat(part);
     return result;
 }
 
-Matrix mat_cof(Matrix m)
+Matrix *mat_cof(Matrix *m)
 {
+    /* Returns a matrix containing cofactors of all elements of given Matrix */
     if (!isSquareMatrix(m))
     {
         HANDLE_ERROR_MSG("M_COF: Cofactors operations valid on Square Matrices only");
     }
 
-    Matrix cofactor_matrix = {(double *)malloc(sizeof(double) * m.rows * m.cols), m.rows, m.cols};
+    Matrix *cofactor_matrix = mat_alloc(m->rows, m->cols);
 
-    if (cofactor_matrix.data == NULL)
+    if (cofactor_matrix->data == NULL)
     {
         HANDLE_ERROR_MSG("M_COF: Memory Allocation Failed for Cofactor Matrix");
     }
 
-    for (size_t i = 0; i < m.rows; ++i)
+    for (size_t i = 0; i < m->rows; ++i)
     {
-        for (size_t j = 0; j < m.cols; ++j)
+        for (size_t j = 0; j < m->cols; ++j)
         {
             double result = cof(m, i, j);
-            // *(cofactor_matrix.data + i * m.cols + j) = result;
-            MAT_AT_EX(cofactor_matrix, i, m.cols, j) = result;
+            // *(cofactor_matrix->data + i * m->cols + j) = result;
+            MAT_AT_EX_P(cofactor_matrix, i, m->cols, j) = result;
         }
     }
 
     return cofactor_matrix;
 }
 
-Matrix adj(Matrix m)
+Matrix *adj(Matrix *m)
 {
+    /* Return adjoint of the Matrix */
     if (!isSquareMatrix(m))
     {
         HANDLE_ERROR_MSG("ADJ: Adjoint operations valid on Square Matrices only");
     }
 
-    Matrix adjoint = mat_alloc(m.rows, m.cols);
+    Matrix *adjoint = mat_alloc(m->rows, m->cols);
 
-    for (size_t i = 0; i < m.rows; i++)
+    for (size_t i = 0; i < m->rows; i++)
     {
-        for (size_t j = 0; j < m.cols; j++)
+        for (size_t j = 0; j < m->cols; j++)
         {
-            Matrix minor_mat = minor(m, i, j);
+            Matrix *minor_mat = minor(m, i, j);
             int sign = ((i + j) % 2 == 0) ? 1 : -1;
             int det_ = det(minor_mat);
-            // *(adjoint.data + j * adjoint.cols + i) = sign * det_;
-            MAT_AT(adjoint, j, i) = sign * det_;
-            free(minor_mat.data);
+            // *(adjoint->data + j * adjoint->cols + i) = sign * det_;
+            MAT_AT_P(adjoint, j, i) = sign * det_;
+            free_mat(minor_mat);
         }
     }
 
     return adjoint;
 }
 
-Matrix inv(Matrix m)
+Matrix *inv(Matrix *m)
 {
+    /* Return inverse of a matrix */
     if (!isSquareMatrix(m))
     {
         HANDLE_ERROR_MSG("INV: Inverse operation valid on Square Matrices only");
@@ -464,17 +486,17 @@ Matrix inv(Matrix m)
         HANDLE_ERROR_MSG("INV: Inverse does not exist for a singular matrix (determinant is zero)");
     }
 
-    Matrix adj_ = adj(m);
-    Matrix inverse_matrix = mat_alloc(m.rows, m.cols);
+    Matrix *adj_ = adj(m);
+    Matrix *inverse_matrix = mat_alloc(m->rows, m->cols);
 
-    for (size_t i = 0; i < m.rows; i++)
+    for (size_t i = 0; i < m->rows; i++)
     {
-        for (size_t j = 0; j < m.cols; j++)
+        for (size_t j = 0; j < m->cols; j++)
         {
             // Avoid division by zero
             if (det_ != 0.0)
             {
-                MAT_AT(inverse_matrix, i, j) = MAT_AT(adj_, i, j) / det_;
+                MAT_AT_P(inverse_matrix, i, j) = MAT_AT_P(adj_, i, j) / det_;
             }
             else
             {
@@ -483,302 +505,305 @@ Matrix inv(Matrix m)
         }
     }
 
-    free(adj_.data);
+    free_mat(adj_);
 
     return inverse_matrix;
 }
 
-Matrix mabs(Matrix m)
+Matrix *mabs(Matrix *m)
 {
-    /* return absolute values of the elements */
-    for (size_t i = 0; i < m.rows; ++i)
+    /* Return absolute values of the elements */
+    for (size_t i = 0; i < m->rows; ++i)
     {
-        for (size_t j = 0; j < m.cols; ++j)
+        for (size_t j = 0; j < m->cols; ++j)
         {
-            MAT_AT(m, i, j) = fabs(MAT_AT(m, i, j));
+            MAT_AT_P(m, i, j) = fabs(MAT_AT_P(m, i, j));
         }
     }
     return m;
 }
 
-double trace(Matrix m)
+double trace(Matrix *m)
 {
+    /* Return the trace of the matrix, i.e return sum of diagonal elements */
     if (!isSquareMatrix(m))
     {
         HANDLE_ERROR_MSG("TRACE: Trace operations valid only on square Matrices.");
     }
 
     double res = 0;
-    for (size_t i = 0; i < m.rows; ++i)
+    for (size_t i = 0; i < m->rows; ++i)
     {
-        for (size_t j = 0; j < m.cols; ++j)
+        for (size_t j = 0; j < m->cols; ++j)
         {
             if (i == j)
-                res += MAT_AT(m, i, j);
+                res += MAT_AT_P(m, i, j);
         }
     }
     return res;
 }
 
-Matrix null_mat(size_t rows, size_t cols)
+Matrix *null_mat(size_t rows, size_t cols)
 {
-    Matrix null = mat_alloc(rows, cols);
+    /* Generate a null matrix */
+    Matrix *null = mat_alloc(rows, cols);
     clear(null);
     return null;
 }
 
-Matrix fill(size_t rows, size_t cols, double element)
+Matrix *fill(size_t rows, size_t cols, double element)
 {
-    Matrix m = mat_alloc(rows, cols);
+    /* Generate a matrix with all entries as a specific element */
+    Matrix *m = mat_alloc(rows, cols);
     for (size_t i = 0; i < rows; i++)
     {
         for (size_t j = 0; j < cols; j++)
         {
-            MAT_AT(m, i, j) = element;
+            MAT_AT_P(m, i, j) = element;
         }
     }
     return m;
 }
 
-Matrix diag(double *arr, size_t SIZE)
+Matrix *diag(double *arr, size_t SIZE)
 {
-    // convert 1D arr to a diagonal matrix
-    Matrix m = mat_alloc(SIZE, SIZE);
-    for (size_t i = 0; i < m.rows; i++)
+    /* convert 1D arr to a diagonal matrix */
+    Matrix *m = mat_alloc(SIZE, SIZE);
+    for (size_t i = 0; i < m->rows; i++)
     {
-        for (size_t j = 0; j < m.cols; j++)
+        for (size_t j = 0; j < m->cols; j++)
         {
             if (i == j)
-                MAT_AT(m, i, j) = arr[i];
+                MAT_AT_P(m, i, j) = arr[i];
         }
     }
     return m;
 }
 
-Matrix identity(size_t SIZE)
+Matrix *identity(size_t SIZE)
 {
-    // Square matrix with diagonal elements as 1
+    /* Generate an indentity matrix i.e, null matrix with diagonals as 1 */
     double arr[SIZE];
     for (unsigned int i = 0; i < SIZE; i++)
         arr[i] = 1;
-    Matrix id = diag(arr, SIZE);
+    Matrix *id = diag(arr, SIZE);
     return id;
 }
 
-void mat_mul_k(Matrix m, double k)
+void mat_mul_k(Matrix *m, double k)
 {
-    // Multiply a matrix with a scalar value
-    for (size_t i = 0; i < m.rows; i++)
+    /* Multiply a matrix with a scalar value */
+    for (size_t i = 0; i < m->rows; i++)
     {
-        for (size_t j = 0; j < m.cols; j++)
+        for (size_t j = 0; j < m->cols; j++)
         {
-            MAT_AT(m, i, j) *= k;
+            MAT_AT_P(m, i, j) *= k;
         }
     }
 }
 
-Matrix sum(Matrix m, unsigned int axis)
+Matrix *sum(Matrix *m, unsigned int axis)
 {
-    Matrix result;
+    Matrix *result;
     switch (axis)
     {
-    case 0: // whole sum
-        result = mat_alloc(1, 1);
-        double sum = 0.0;
-        for (size_t i = 0; i < m.rows; i++)
-        {
-            for (size_t j = 0; j < m.cols; j++)
-            {
-                sum += MAT_AT(m, i, j);
-            }
-        }
-        MAT_AT(result, 0, 0) = sum;
-        break;
-    case 1: // Row-wise
-        result = mat_alloc(m.rows, 1);
-        for (size_t i = 0; i < m.rows; i++)
-        {
+        case 0: // whole sum
+            result = mat_alloc(1, 1);
             double sum = 0.0;
-            for (size_t j = 0; j < m.cols; j++)
+            for (size_t i = 0; i < m->rows; i++)
             {
-                sum += MAT_AT(m, i, j);
+                for (size_t j = 0; j < m->cols; j++)
+                {
+                    sum += MAT_AT_P(m, i, j);
+                }
             }
-            MAT_AT(result, i, 0) = sum;
-        }
-        break;
-    case 2: // Column-wise
-        result = mat_alloc(1, m.cols);
-        for (size_t j = 0; j < m.cols; j++)
-        {
-            double sum = 0.0;
-            for (size_t i = 0; i < m.rows; i++)
+            MAT_AT_P(result, 0, 0) = sum;
+            break;
+        case 1: // Row-wise
+            result = mat_alloc(m->rows, 1);
+            for (size_t i = 0; i < m->rows; i++)
             {
-                sum += MAT_AT(m, i, j);
+                double sum = 0.0;
+                for (size_t j = 0; j < m->cols; j++)
+                {
+                    sum += MAT_AT_P(m, i, j);
+                }
+                MAT_AT_P(result, i, 0) = sum;
             }
-            MAT_AT(result, 0, j) = sum;
-        }
-        break;
-    default:
-        // Handle invalid axis value
-        HANDLE_ERROR_MSG("SUM: Invalid axis value. Use 0 to get whole sum 1 for row-wise and 2 for column-wise.");
-        break;
+            break;
+        case 2: // Column-wise
+            result = mat_alloc(1, m->cols);
+            for (size_t j = 0; j < m->cols; j++)
+            {
+                double sum = 0.0;
+                for (size_t i = 0; i < m->rows; i++)
+                {
+                    sum += MAT_AT_P(m, i, j);
+                }
+                MAT_AT_P(result, 0, j) = sum;
+            }
+            break;
+        default:
+            // Handle invalid axis value
+            HANDLE_ERROR_MSG("SUM: Invalid axis value. Use 0 to get whole sum 1 for row-wise and 2 for column-wise.");
+            break;
     }
     return result;
 }
 
-Matrix mean(Matrix m, unsigned int axis)
+Matrix *mean(Matrix *m, unsigned int axis)
 {
-    Matrix result;
+    Matrix *result;
 
     switch (axis)
     {
-    case 0: // whole mean
-        result = mat_alloc(1, 1);
-        double sum = 0.0;
-        for (size_t i = 0; i < m.rows; i++)
-        {
-            for (size_t j = 0; j < m.cols; j++)
-            {
-                sum += MAT_AT(m, i, j);
-            }
-        }
-        double mean = sum / getTotalElements(m);
-        MAT_AT(result, 0, 0) = mean;
-        break;
-    case 2: // Row-wise
-        result = mat_alloc(m.rows, 1);
-        for (size_t i = 0; i < m.rows; i++)
-        {
+        case 0: // whole mean
+            result = mat_alloc(1, 1);
             double sum = 0.0;
-            for (size_t j = 0; j < m.cols; j++)
+            for (size_t i = 0; i < m->rows; i++)
             {
-                sum += MAT_AT(m, i, j);
+                for (size_t j = 0; j < m->cols; j++)
+                {
+                    sum += MAT_AT_P(m, i, j);
+                }
             }
-            double mean = sum / m.cols;
-            MAT_AT(result, i, 0) = mean;
-        }
-        break;
-    case 1: // Column-wise
-        result = mat_alloc(1, m.cols);
-        for (size_t j = 0; j < m.cols; j++)
-        {
-            double sum = 0.0;
-            for (size_t i = 0; i < m.rows; i++)
+            double mean = sum / getTotalElements(m);
+            MAT_AT_P(result, 0, 0) = mean;
+            break;
+        case 2: // Row-wise
+            result = mat_alloc(m->rows, 1);
+            for (size_t i = 0; i < m->rows; i++)
             {
-                sum += MAT_AT(m, i, j);
+                double sum = 0.0;
+                for (size_t j = 0; j < m->cols; j++)
+                {
+                    sum += MAT_AT_P(m, i, j);
+                }
+                double mean = sum / m->cols;
+                MAT_AT_P(result, i, 0) = mean;
             }
-            double mean = sum / m.rows;
-            MAT_AT(result, 0, j) = mean;
-        }
-        break;
-    default:
-        // Handle invalid axis value
-        HANDLE_ERROR_MSG("MEAN: Invalid axis value. Use 0 to get whole mean, 1 for row-wise mean, and 2 for column-wise mean.");
-        break;
+            break;
+        case 1: // Column-wise
+            result = mat_alloc(1, m->cols);
+            for (size_t j = 0; j < m->cols; j++)
+            {
+                double sum = 0.0;
+                for (size_t i = 0; i < m->rows; i++)
+                {
+                    sum += MAT_AT_P(m, i, j);
+                }
+                double mean = sum / m->rows;
+                MAT_AT_P(result, 0, j) = mean;
+            }
+            break;
+        default:
+            // Handle invalid axis value
+            HANDLE_ERROR_MSG("MEAN: Invalid axis value. Use 0 to get whole mean, 1 for row-wise mean, and 2 for column-wise mean.");
+            break;
     }
 
     return result;
 }
 
-Matrix dev(Matrix m)
+Matrix *dev(Matrix *m)
 {
-    Matrix dev = mat_alloc(m.rows, m.cols);
-    double _mean = MAT_AT(mean(m, 0), 0, 0);
+    Matrix *dev = mat_alloc(m->rows, m->cols);
+    double _mean = MAT_AT_P(mean(m, 0), 0, 0);
 
-    for (size_t i = 0; i < m.rows; ++i)
+    for (size_t i = 0; i < m->rows; ++i)
     {
-        for (size_t j = 0; j < m.cols; ++j)
+        for (size_t j = 0; j < m->cols; ++j)
         {
-            MAT_AT(dev, i, j) = MAT_AT(m, i, j) - _mean;
+            MAT_AT_P(dev, i, j) = MAT_AT_P(m, i, j) - _mean;
         }
     }
     return dev;
 }
 
 
-double mean_dev(Matrix m)
+double mean_dev(Matrix *m)
 {
-    Matrix _devs = mabs(dev(m)); // absolute deviations
-    return MAT_AT(mean(_devs, 0), 0, 0);
+    Matrix *_devs = mabs(dev(m)); // absolute deviations
+    return MAT_AT_P(mean(_devs, 0), 0, 0);
 }
 
 
-Matrix var(Matrix m, unsigned int axis)
+Matrix *var(Matrix *m, unsigned int axis)
 {
-    Matrix _dev = dev(m);
-    Matrix res;
+    Matrix *_dev = dev(m);
+    Matrix *res;
 
     switch (axis)
     {
-    case 0:
-        res = mat_alloc(1, 1);
-        double _res = 0;
-        for (size_t i = 0; i < _dev.rows; ++i)
-        {
-            for (size_t j = 0; j < _dev.cols; ++j)
+        case 0:
+            res = mat_alloc(1, 1);
+            double _res = 0;
+            for (size_t i = 0; i < _dev->rows; ++i)
             {
-                _res += pow(MAT_AT(_dev, i, j), 2);
+                for (size_t j = 0; j < _dev->cols; ++j)
+                {
+                    _res += pow(MAT_AT_P(_dev, i, j), 2);
+                }
             }
-        }
-        _res /= (double)getTotalElements(_dev);
-        MAT_AT(res, 0, 0) = _res;
-        break;
-    case 1:         // row wise
-        res = mat_alloc(m.rows, 1);
-        for (size_t i = 0; i < m.rows; ++i)
-        {
-            double _res = 0.0;
-            for (size_t j = 0; j < m.cols; ++j)
+            _res /= (double)getTotalElements(_dev);
+            MAT_AT_P(res, 0, 0) = _res;
+            break;
+        case 1:         // row wise
+            res = mat_alloc(m->rows, 1);
+            for (size_t i = 0; i < m->rows; ++i)
             {
-                _res += pow(MAT_AT(_dev, i, j), 2);
+                double _res = 0.0;
+                for (size_t j = 0; j < m->cols; ++j)
+                {
+                    _res += pow(MAT_AT_P(_dev, i, j), 2);
+                }
+                _res /= (double) m->rows;
+                MAT_AT_P(res, i, 0) = _res;
             }
-            _res /= (double) m.rows;
-            MAT_AT(res, i, 0) = _res;
-        }
-        break;
-    case 2:         // column wise
-        res = mat_alloc(1, m.cols);
-        for (size_t j = 0; j < m.cols; ++j)
-        {
-            double _res = 0.0;
-            for (size_t i = 0; i < m.rows; ++i)
+            break;
+        case 2:         // column wise
+            res = mat_alloc(1, m->cols);
+            for (size_t j = 0; j < m->cols; ++j)
             {
-                _res += pow(MAT_AT(_dev, i, j), 2);
+                double _res = 0.0;
+                for (size_t i = 0; i < m->rows; ++i)
+                {
+                    _res += pow(MAT_AT_P(_dev, i, j), 2);
+                }
+                _res /= (double) m->cols;
+                MAT_AT_P(res, 0, j) = _res;
             }
-            _res /= (double) m.cols;
-            MAT_AT(res, 0, j) = _res;
-        }
-        break;
-    default:
-        HANDLE_ERROR_MSG("VAR: Invalid axis value. Use 0 to get whole variance, 1 for row-wise variance, and 2 for column-wise variance.");
-        break;
+            break;
+        default:
+            HANDLE_ERROR_MSG("VAR: Invalid axis value. Use 0 to get whole variance, 1 for row-wise variance, and 2 for column-wise variance.");
+            break;
     }
 
     return res;
 }
 
-Matrix std(Matrix m, unsigned int axis)
+Matrix *std(Matrix *m, unsigned int axis)
 {
-    Matrix res;
+    Matrix *res;
 
     switch (axis)
     {
     case 0:
         res = mat_alloc(1, 1);
-        MAT_AT(res, 0, 0) = sqrt(MAT_AT(var(m, 0), 0, 0));
+        MAT_AT_P(res, 0, 0) = sqrt(MAT_AT_P(var(m, 0), 0, 0));
         break;
     case 1: // row wise
-        res = mat_alloc(m.rows, 1);
-        for (size_t i = 0; i < m.rows; ++i)
+        res = mat_alloc(m->rows, 1);
+        for (size_t i = 0; i < m->rows; ++i)
         {
-            MAT_AT(res, i, 0) = sqrt(MAT_AT(var(m, 1), i, 0));
+            MAT_AT_P(res, i, 0) = sqrt(MAT_AT_P(var(m, 1), i, 0));
         }
         break;
     case 2:
-        res = mat_alloc(1, m.cols);
-        for (size_t j = 0; j < m.cols; j++)
+        res = mat_alloc(1, m->cols);
+        for (size_t j = 0; j < m->cols; j++)
         {
-            MAT_AT(res, 0, j) = sqrt(MAT_AT(var(m, 2), 0, j));
+            MAT_AT_P(res, 0, j) = sqrt(MAT_AT_P(var(m, 2), 0, j));
         }
         break;
     default:
@@ -789,26 +814,27 @@ Matrix std(Matrix m, unsigned int axis)
     return res;
 }
 
-Matrix aug(Matrix a, Matrix b)
+Matrix *aug(Matrix *a, Matrix *b)
 {
-    if (a.rows != b.rows)
+    /* Generate an augmented matrix from two given matrices a & b -> [a | b] */
+    if (a->rows != b->rows)
     {
         HANDLE_ERROR_MSG("AUG: Can`t augment matrices. Number of rows not same.");
     }
 
-    Matrix aug = mat_alloc(a.rows, (a.cols + b.cols));
+    Matrix *aug = mat_alloc(a->rows, (a->cols + b->cols));
 
-    for (size_t i = 0; i < aug.rows; ++i)
+    for (size_t i = 0; i < aug->rows; ++i)
     {
-        for (size_t j = 0; j < aug.cols; ++j)
+        for (size_t j = 0; j < aug->cols; ++j)
         {
-            if (j < a.cols)
+            if (j < a->cols)
             {
-                MAT_AT(aug, i, j) = MAT_AT(a, i, j);
+                MAT_AT_P(aug, i, j) = MAT_AT_P(a, i, j);
             }
             else
             {
-                MAT_AT(aug, i, j) = MAT_AT(b, i, j - a.cols);
+                MAT_AT_P(aug, i, j) = MAT_AT_P(b, i, j - a->cols);
             }
         }
     }
