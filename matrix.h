@@ -849,7 +849,3 @@ Matrix *aug(Matrix *a, Matrix *b)
 
 
 #endif // MATRIX_H
-
-// #ifdef MATRIX_IMPLEMENTATION
-// // CODE
-// #endif // MATRIX_IMPLEMENTATION
